@@ -1,0 +1,30 @@
+{
+  "status": "FAIL",
+  "kind": "actual macOS WKWebView instrumented QA app; real native file picker and disk save, no VM/IPC mocks",
+  "time": "2026-09-27T02:34:21+0900",
+  "executable": "/Users/zerogod/Projects/BolgeScope/apps/desktop/src-tauri/target/debug/bundle/macos/BolgeScope QA.app/Contents/MacOS/bolgescope-desktop",
+  "executableSha256": "56c89ce04ed81a7d3eecb8c0460a18f7e6e91035e59dfaf2ae23ce505018d149",
+  "checks": [
+    {
+      "name": "actual-native-WKWebView-and-Monaco",
+      "status": "PASS",
+      "detail": {
+        "editor": true,
+        "secure": true,
+        "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+        "url": "tauri://localhost"
+      }
+    },
+    {
+      "name": "current-native-flow",
+      "status": "FAIL",
+      "error": "RuntimeError(\"Native condition timeout: document.querySelector('.status-bar')?.textContent.includes('87 cells') last=False\")"
+    }
+  ],
+  "productionAutomationPlugin": false,
+  "notCovered": [
+    "Public Developer ID signing/notarization",
+    "Different Mac",
+    "Full Korean IME composition/VoiceOver audit"
+  ]
+}

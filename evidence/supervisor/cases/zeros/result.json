@@ -1,0 +1,27 @@
+{
+  "name": "zeros",
+  "inputHex": "30303030",
+  "outputHex": "2d",
+  "step": 24,
+  "finalRegisters": {
+    "a": 29485,
+    "c": 23,
+    "d": 80
+  },
+  "dataWrites78": [
+    29485,
+    29485,
+    29485,
+    29485
+  ],
+  "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+  "finalMemorySha256": "39373927def5441a8720d86de9f0740728afff9d103e0052e91d051df2f3b774",
+  "assertions": {
+    "tracedEqualsOriginal": true,
+    "halted": true,
+    "steps24": true,
+    "xlat2NulBoundary": true,
+    "expectedOutput": true
+  },
+  "status": "PASS"
+}

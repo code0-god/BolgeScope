@@ -1,0 +1,21 @@
+{
+  "name": "zero-byte-output",
+  "raw": "cP",
+  "sourceSha256": "475cd5c7c85f919e46746b6772f5bcff50ccf9684002ae26327b2696d1f51abe",
+  "inputHex": "",
+  "outputHex": "00",
+  "terminal": "HALTED",
+  "step": 2,
+  "final": {
+    "kind": "after",
+    "step": 2,
+    "a": 0,
+    "c": 1,
+    "d": 1,
+    "halted": true
+  },
+  "revisits": [],
+  "tracePath": "extended/zero-byte-output/trace.jsonl",
+  "initialPath": "extended/zero-byte-output/initial.u16",
+  "finalPath": "extended/zero-byte-output/final.u16"
+}

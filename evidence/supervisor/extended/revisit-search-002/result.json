@@ -1,0 +1,21 @@
+{
+  "name": "revisit-search-002",
+  "raw": "c=<`$L8~}lY3zxgfR3,>r)p^mJIGi'DgBeS!Qw`Nt(K&YuG42qCo/-->*<K's%Gc#!~}A0\\zT=v;PtTqLK4m!MFKiC,Tw)>&s%:^\"n~Z4W81UTSd,10)_-Jl7GY4WC$e",
+  "sourceSha256": "659325fc52a4a40e57817e37dc9e7716f3ae7e5c4b3c4e2c7a84147ddd523903",
+  "inputHex": "4142430a",
+  "outputHex": "00",
+  "terminal": "REFERENCE_UNDEFINED",
+  "step": 1,
+  "final": {
+    "kind": "after",
+    "step": 1,
+    "a": 0,
+    "c": 1,
+    "d": 1,
+    "halted": false
+  },
+  "revisits": [],
+  "tracePath": "extended/revisit-search-002/trace.jsonl",
+  "initialPath": "extended/revisit-search-002/initial.u16",
+  "finalPath": "extended/revisit-search-002/final.u16"
+}

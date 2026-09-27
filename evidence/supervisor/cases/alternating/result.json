@@ -1,0 +1,27 @@
+{
+  "name": "alternating",
+  "inputHex": "30313031",
+  "outputHex": "2c",
+  "step": 24,
+  "finalRegisters": {
+    "a": 29484,
+    "c": 23,
+    "d": 80
+  },
+  "dataWrites78": [
+    29485,
+    29484,
+    29485,
+    29484
+  ],
+  "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+  "finalMemorySha256": "470df6212fcffef9503e5c211238a3b6b135c0a6a0619a9eb96712f63966b80a",
+  "assertions": {
+    "tracedEqualsOriginal": true,
+    "halted": true,
+    "steps24": true,
+    "xlat2NulBoundary": true,
+    "expectedOutput": true
+  },
+  "status": "PASS"
+}

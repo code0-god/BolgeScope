@@ -1,0 +1,21 @@
+{
+  "name": "single-byte-echo",
+  "raw": "ubO",
+  "sourceSha256": "681f8033410df7a4a5d7eaa3f8c730929459de77ed4fd27cac02cd813ab36c0c",
+  "inputHex": "ff",
+  "outputHex": "ff",
+  "terminal": "HALTED",
+  "step": 3,
+  "final": {
+    "kind": "after",
+    "step": 3,
+    "a": 255,
+    "c": 2,
+    "d": 2,
+    "halted": true
+  },
+  "revisits": [],
+  "tracePath": "extended/single-byte-echo/trace.jsonl",
+  "initialPath": "extended/single-byte-echo/initial.u16",
+  "finalPath": "extended/single-byte-echo/final.u16"
+}

@@ -1,0 +1,193 @@
+{
+  "kind": "independent-supervisor-reference",
+  "originalUrl": "https://raw.githubusercontent.com/TryItOnline/malbolge/master/malbolge.c",
+  "originalSha256": "fe29a717f9f684d6cc81d5c63273d446d9c65fec73e62164538514d5737b07a6",
+  "fixtureLogicalSha256": "69ed29dde001b80de62e2feaf2a2f5463ec7ee9666b981954ef63a938a854a81",
+  "instrumentedSha256": "39ecb2b5bc95044505f7a891fbfb9093e72612f42db539e0b03ccc18ab4b99d8",
+  "byteOrder": "little",
+  "commands": [
+    [
+      "clang",
+      "-std=c99",
+      "-O2",
+      "/Users/zerogod/Projects/BolgeScope/evidence/supervisor/malbolge.portable.c",
+      "-o",
+      "/Users/zerogod/Projects/BolgeScope/evidence/supervisor/malbolge.portable"
+    ],
+    [
+      "clang",
+      "-std=c99",
+      "-O2",
+      "/Users/zerogod/Projects/BolgeScope/evidence/supervisor/malbolge.instrumented.c",
+      "-o",
+      "/Users/zerogod/Projects/BolgeScope/evidence/supervisor/malbolge.instrumented"
+    ]
+  ],
+  "cases": [
+    {
+      "name": "abc-lf",
+      "inputHex": "4142430a",
+      "outputHex": "4a",
+      "step": 24,
+      "finalRegisters": {
+        "a": 29514,
+        "c": 23,
+        "d": 80
+      },
+      "dataWrites78": [
+        29487,
+        29485,
+        29484,
+        29514
+      ],
+      "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+      "finalMemorySha256": "5f55a8e20b63aeeec88e326cb488c946b478ee271e15c79128e74d3b1184bd2b",
+      "assertions": {
+        "tracedEqualsOriginal": true,
+        "halted": true,
+        "steps24": true,
+        "xlat2NulBoundary": true,
+        "expectedOutput": true,
+        "registers": true,
+        "memory78": true,
+        "writes78": true
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "zeros",
+      "inputHex": "30303030",
+      "outputHex": "2d",
+      "step": 24,
+      "finalRegisters": {
+        "a": 29485,
+        "c": 23,
+        "d": 80
+      },
+      "dataWrites78": [
+        29485,
+        29485,
+        29485,
+        29485
+      ],
+      "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+      "finalMemorySha256": "39373927def5441a8720d86de9f0740728afff9d103e0052e91d051df2f3b774",
+      "assertions": {
+        "tracedEqualsOriginal": true,
+        "halted": true,
+        "steps24": true,
+        "xlat2NulBoundary": true,
+        "expectedOutput": true
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "last-one",
+      "inputHex": "30303031",
+      "outputHex": "2c",
+      "step": 24,
+      "finalRegisters": {
+        "a": 29484,
+        "c": 23,
+        "d": 80
+      },
+      "dataWrites78": [
+        29485,
+        29485,
+        29485,
+        29484
+      ],
+      "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+      "finalMemorySha256": "470df6212fcffef9503e5c211238a3b6b135c0a6a0619a9eb96712f63966b80a",
+      "assertions": {
+        "tracedEqualsOriginal": true,
+        "halted": true,
+        "steps24": true,
+        "xlat2NulBoundary": true,
+        "expectedOutput": true
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "alternating",
+      "inputHex": "30313031",
+      "outputHex": "2c",
+      "step": 24,
+      "finalRegisters": {
+        "a": 29484,
+        "c": 23,
+        "d": 80
+      },
+      "dataWrites78": [
+        29485,
+        29484,
+        29485,
+        29484
+      ],
+      "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+      "finalMemorySha256": "470df6212fcffef9503e5c211238a3b6b135c0a6a0619a9eb96712f63966b80a",
+      "assertions": {
+        "tracedEqualsOriginal": true,
+        "halted": true,
+        "steps24": true,
+        "xlat2NulBoundary": true,
+        "expectedOutput": true
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "high-bytes",
+      "inputHex": "007f80ff",
+      "outputHex": "55",
+      "step": 24,
+      "finalRegisters": {
+        "a": 29269,
+        "c": 23,
+        "d": 80
+      },
+      "dataWrites78": [
+        29524,
+        29424,
+        29415,
+        29269
+      ],
+      "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+      "finalMemorySha256": "cc5e8a614f7862c8029c860bd50f92d0cb1bc6a732a8cef4598c6ead1a329689",
+      "assertions": {
+        "tracedEqualsOriginal": true,
+        "halted": true,
+        "steps24": true,
+        "xlat2NulBoundary": true
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "closed-empty",
+      "inputHex": "",
+      "outputHex": "54",
+      "step": 24,
+      "finalRegisters": {
+        "a": 84,
+        "c": 23,
+        "d": 80
+      },
+      "dataWrites78": [
+        168,
+        84,
+        168,
+        84
+      ],
+      "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+      "finalMemorySha256": "0b38ab0b753941f2ec82b621ba7610e53d9d30bfcbd7786883ff3590fadafe43",
+      "assertions": {
+        "tracedEqualsOriginal": true,
+        "halted": true,
+        "steps24": true,
+        "xlat2NulBoundary": true
+      },
+      "status": "PASS"
+    }
+  ],
+  "status": "PASS",
+  "productVMCompared": false
+}

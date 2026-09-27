@@ -1,0 +1,21 @@
+{
+  "name": "ordered-same-cell-writes",
+  "raw": "DCBA@?>=<;:9876543210/.-,+*)('&%$#c.",
+  "sourceSha256": "58719e2bdac31f1e9f8f289beab8154afb1070567fef97794de7faf86051e285",
+  "inputHex": "",
+  "outputHex": "",
+  "terminal": "HALTED",
+  "step": 36,
+  "final": {
+    "kind": "after",
+    "step": 36,
+    "a": 33,
+    "c": 35,
+    "d": 35,
+    "halted": true
+  },
+  "revisits": [],
+  "tracePath": "extended/ordered-same-cell-writes/trace.jsonl",
+  "initialPath": "extended/ordered-same-cell-writes/initial.u16",
+  "finalPath": "extended/ordered-same-cell-writes/final.u16"
+}

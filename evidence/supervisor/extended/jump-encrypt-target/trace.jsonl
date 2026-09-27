@@ -1,0 +1,10 @@
+{"kind":"tables","xlat1Size":95,"xlat2Size":95,"xlat2_94":0,"wordSize":2}
+{"kind":"before","step":0,"a":0,"c":0,"d":0,"raw":98,"decoded":105}
+{"kind":"read","role":"fetch","order":0,"address":0,"value":98}
+{"kind":"read","role":"data-read","order":1,"address":0,"value":98}
+{"kind":"write","role":"encryption","order":2,"address":98,"before":64,"after":81}
+{"kind":"after","step":1,"a":0,"c":99,"d":1,"halted":false}
+{"kind":"before","step":1,"a":0,"c":99,"d":1,"raw":76,"decoded":118}
+{"kind":"read","role":"fetch","order":0,"address":99,"value":76}
+{"kind":"after","step":2,"a":0,"c":99,"d":1,"halted":true}
+{"kind":"terminal","status":"HALTED","step":2}

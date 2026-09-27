@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-09-27T02:25:03.176Z",
+  "kind": "Chromium actual UI (NOT native WKWebView)",
+  "passed": 6,
+  "failed": 0,
+  "errors": [],
+  "tests": [
+    {
+      "name": "view-switch-preserves-normalized-authored-source",
+      "status": "PASS"
+    },
+    {
+      "name": "opening-example-is-not-an-editor-mutation",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture-run-input-halt-back-replay",
+      "status": "PASS",
+      "detail": {
+        "outputHex": "4a",
+        "registers": [
+          29514,
+          23,
+          80
+        ]
+      }
+    },
+    {
+      "name": "history-selection-uses-one-time-context",
+      "status": "PASS"
+    },
+    {
+      "name": "read-only-snapshot-does-not-discard-source-edit",
+      "status": "PASS"
+    },
+    {
+      "name": "compact-layout-retains-main-controls",
+      "status": "PASS"
+    }
+  ]
+}

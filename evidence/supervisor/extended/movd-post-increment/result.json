@@ -1,0 +1,21 @@
+{
+  "name": "movd-post-increment",
+  "raw": "(P",
+  "sourceSha256": "0e613e4615d5c0dc760e771c7c37e5527ba3c68930911bf0f8b62b1bb569fdee",
+  "inputHex": "",
+  "outputHex": "",
+  "terminal": "HALTED",
+  "step": 2,
+  "final": {
+    "kind": "after",
+    "step": 2,
+    "a": 0,
+    "c": 1,
+    "d": 41,
+    "halted": true
+  },
+  "revisits": [],
+  "tracePath": "extended/movd-post-increment/trace.jsonl",
+  "initialPath": "extended/movd-post-increment/initial.u16",
+  "finalPath": "extended/movd-post-increment/final.u16"
+}

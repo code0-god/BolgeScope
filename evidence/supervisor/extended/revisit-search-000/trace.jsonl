@@ -1,0 +1,6 @@
+{"kind":"tables","xlat1Size":95,"xlat2Size":95,"xlat2_94":0,"wordSize":2}
+{"kind":"before","step":0,"a":0,"c":0,"d":0,"raw":62,"decoded":112}
+{"kind":"read","role":"fetch","order":0,"address":0,"value":62}
+{"kind":"read","role":"data-read","order":1,"address":0,"value":62}
+{"kind":"write","role":"data-write","order":2,"address":0,"before":62,"after":29555}
+{"kind":"terminal","status":"REFERENCE_UNDEFINED","step":0}

@@ -1,0 +1,21 @@
+{
+  "name": "jump-encrypt-target",
+  "raw": "bCBA@?>=<;:9876543210/.-,+*)('&%$#\"!~}|{zyxwvutsrqponmlkjihgfedcba`_^]\\[ZYXWVUTSRQPONMLKJIHGFEDCBA@L",
+  "sourceSha256": "443f319f9965e56fc8626758536e9d0cbd04dd7a5b49af3a1f5b43049d1e57aa",
+  "inputHex": "",
+  "outputHex": "",
+  "terminal": "HALTED",
+  "step": 2,
+  "final": {
+    "kind": "after",
+    "step": 2,
+    "a": 0,
+    "c": 99,
+    "d": 1,
+    "halted": true
+  },
+  "revisits": [],
+  "tracePath": "extended/jump-encrypt-target/trace.jsonl",
+  "initialPath": "extended/jump-encrypt-target/initial.u16",
+  "finalPath": "extended/jump-encrypt-target/final.u16"
+}

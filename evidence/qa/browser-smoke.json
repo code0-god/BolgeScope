@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "registers": [
+    "29514",
+    "23",
+    "80"
+  ],
+  "outputHex": "4A",
+  "haltedStep": 24,
+  "replayed": true,
+  "errors": []
+}

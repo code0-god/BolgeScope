@@ -1,0 +1,26 @@
+{
+  "name": "closed-empty",
+  "inputHex": "",
+  "outputHex": "54",
+  "step": 24,
+  "finalRegisters": {
+    "a": 84,
+    "c": 23,
+    "d": 80
+  },
+  "dataWrites78": [
+    168,
+    84,
+    168,
+    84
+  ],
+  "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+  "finalMemorySha256": "0b38ab0b753941f2ec82b621ba7610e53d9d30bfcbd7786883ff3590fadafe43",
+  "assertions": {
+    "tracedEqualsOriginal": true,
+    "halted": true,
+    "steps24": true,
+    "xlat2NulBoundary": true
+  },
+  "status": "PASS"
+}

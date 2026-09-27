@@ -1,0 +1,30 @@
+{
+  "name": "abc-lf",
+  "inputHex": "4142430a",
+  "outputHex": "4a",
+  "step": 24,
+  "finalRegisters": {
+    "a": 29514,
+    "c": 23,
+    "d": 80
+  },
+  "dataWrites78": [
+    29487,
+    29485,
+    29484,
+    29514
+  ],
+  "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+  "finalMemorySha256": "5f55a8e20b63aeeec88e326cb488c946b478ee271e15c79128e74d3b1184bd2b",
+  "assertions": {
+    "tracedEqualsOriginal": true,
+    "halted": true,
+    "steps24": true,
+    "xlat2NulBoundary": true,
+    "expectedOutput": true,
+    "registers": true,
+    "memory78": true,
+    "writes78": true
+  },
+  "status": "PASS"
+}

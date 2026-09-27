@@ -1,0 +1,30 @@
+{
+  "status": "FAIL",
+  "kind": "actual macOS WKWebView, optional test-only WebDriver, real native pickers and disk I/O; no VM/IPC mocks",
+  "timestamp": "2026-09-27T11:29:26+0900",
+  "process": "apps/desktop/src-tauri/target/debug/bundle/macos/BolgeScope Acceptance.app/Contents/MacOS/bolgescope-desktop",
+  "pid": 36077,
+  "executableSha256": "089c6d3c97e81f453f833db2e480abfe81fcb3a0c9735d7f94437c3a60345038",
+  "checks": [
+    {
+      "name": "actual-WKWebView-offline-assets-and-Monaco",
+      "status": "PASS",
+      "detail": {
+        "secure": true,
+        "url": "tauri://localhost",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)"
+      }
+    },
+    {
+      "name": "native-flow",
+      "status": "FAIL",
+      "error": "RuntimeError(\"Native condition timeout: document.querySelector('.document-title')?.textContent.includes('fixture.mb') && document.querySelector('.status-bar')?.textContent.includes('87 cells') last=False\")"
+    }
+  ],
+  "notCovered": [
+    "Developer ID signing and notarization",
+    "Other Mac / older macOS",
+    "Full Korean IME composition and VoiceOver audit",
+    "Final uninstrumented release interaction (separate smoke)"
+  ]
+}

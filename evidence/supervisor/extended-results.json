@@ -1,0 +1,211 @@
+{
+  "status": "PASS",
+  "edgeCases": [
+    {
+      "name": "single-byte-echo",
+      "raw": "ubO",
+      "sourceSha256": "681f8033410df7a4a5d7eaa3f8c730929459de77ed4fd27cac02cd813ab36c0c",
+      "inputHex": "ff",
+      "outputHex": "ff",
+      "terminal": "HALTED",
+      "step": 3,
+      "final": {
+        "kind": "after",
+        "step": 3,
+        "a": 255,
+        "c": 2,
+        "d": 2,
+        "halted": true
+      },
+      "revisits": [],
+      "tracePath": "extended/single-byte-echo/trace.jsonl",
+      "initialPath": "extended/single-byte-echo/initial.u16",
+      "finalPath": "extended/single-byte-echo/final.u16"
+    },
+    {
+      "name": "zero-byte-output",
+      "raw": "cP",
+      "sourceSha256": "475cd5c7c85f919e46746b6772f5bcff50ccf9684002ae26327b2696d1f51abe",
+      "inputHex": "",
+      "outputHex": "00",
+      "terminal": "HALTED",
+      "step": 2,
+      "final": {
+        "kind": "after",
+        "step": 2,
+        "a": 0,
+        "c": 1,
+        "d": 1,
+        "halted": true
+      },
+      "revisits": [],
+      "tracePath": "extended/zero-byte-output/trace.jsonl",
+      "initialPath": "extended/zero-byte-output/initial.u16",
+      "finalPath": "extended/zero-byte-output/final.u16"
+    },
+    {
+      "name": "movd-post-increment",
+      "raw": "(P",
+      "sourceSha256": "0e613e4615d5c0dc760e771c7c37e5527ba3c68930911bf0f8b62b1bb569fdee",
+      "inputHex": "",
+      "outputHex": "",
+      "terminal": "HALTED",
+      "step": 2,
+      "final": {
+        "kind": "after",
+        "step": 2,
+        "a": 0,
+        "c": 1,
+        "d": 41,
+        "halted": true
+      },
+      "revisits": [],
+      "tracePath": "extended/movd-post-increment/trace.jsonl",
+      "initialPath": "extended/movd-post-increment/initial.u16",
+      "finalPath": "extended/movd-post-increment/final.u16"
+    },
+    {
+      "name": "jump-encrypt-target",
+      "raw": "bCBA@?>=<;:9876543210/.-,+*)('&%$#\"!~}|{zyxwvutsrqponmlkjihgfedcba`_^]\\[ZYXWVUTSRQPONMLKJIHGFEDCBA@L",
+      "sourceSha256": "443f319f9965e56fc8626758536e9d0cbd04dd7a5b49af3a1f5b43049d1e57aa",
+      "inputHex": "",
+      "outputHex": "",
+      "terminal": "HALTED",
+      "step": 2,
+      "final": {
+        "kind": "after",
+        "step": 2,
+        "a": 0,
+        "c": 99,
+        "d": 1,
+        "halted": true
+      },
+      "revisits": [],
+      "tracePath": "extended/jump-encrypt-target/trace.jsonl",
+      "initialPath": "extended/jump-encrypt-target/initial.u16",
+      "finalPath": "extended/jump-encrypt-target/final.u16"
+    },
+    {
+      "name": "ordered-same-cell-writes",
+      "raw": "DCBA@?>=<;:9876543210/.-,+*)('&%$#c.",
+      "sourceSha256": "58719e2bdac31f1e9f8f289beab8154afb1070567fef97794de7faf86051e285",
+      "inputHex": "",
+      "outputHex": "",
+      "terminal": "HALTED",
+      "step": 36,
+      "final": {
+        "kind": "after",
+        "step": 36,
+        "a": 33,
+        "c": 35,
+        "d": 35,
+        "halted": true
+      },
+      "revisits": [],
+      "tracePath": "extended/ordered-same-cell-writes/trace.jsonl",
+      "initialPath": "extended/ordered-same-cell-writes/initial.u16",
+      "finalPath": "extended/ordered-same-cell-writes/final.u16"
+    },
+    {
+      "name": "unsafe-rotate-rollback-boundary",
+      "raw": "'P",
+      "sourceSha256": "290b94859ef5e6a1dad3b01cd97a3a7b43fdd48e9b4d04cbea3a895ecb193ee7",
+      "inputHex": "",
+      "outputHex": "",
+      "terminal": "REFERENCE_UNDEFINED",
+      "step": 0,
+      "final": null,
+      "revisits": [],
+      "tracePath": "extended/unsafe-rotate-rollback-boundary/trace.jsonl",
+      "initialPath": "extended/unsafe-rotate-rollback-boundary/initial.u16",
+      "finalPath": "extended/unsafe-rotate-rollback-boundary/final.u16"
+    },
+    {
+      "name": "invalid-generated-fetch",
+      "raw": "DC",
+      "sourceSha256": "ecdba0e2f6615760b196edd49a2f1bf0d0d6dfccbf0ad8fe9ee55722dcca42a4",
+      "inputHex": "",
+      "outputHex": "",
+      "terminal": "STALLED_INVALID_FETCH",
+      "step": 2,
+      "final": {
+        "kind": "after",
+        "step": 2,
+        "a": 0,
+        "c": 2,
+        "d": 2,
+        "halted": false
+      },
+      "revisits": [],
+      "tracePath": "extended/invalid-generated-fetch/trace.jsonl",
+      "initialPath": "extended/invalid-generated-fetch/initial.u16",
+      "finalPath": "extended/invalid-generated-fetch/final.u16"
+    }
+  ],
+  "revisit": {
+    "name": "revisit-search-003",
+    "raw": "b'&__?!=<;GWVUgf4RcOO/pL98I6G!WfCB\".-,`<)yrw6YGF!D1on@lO+c)af_qF5D3B}]@?g,evu8r6_5Jnllj|igge)vQP<r^?!\\ZZYWyhwwuuQPO/Ln&mHHjXW2$e",
+    "sourceSha256": "c7be2fb97a66b0d3f5b13ba4c2ec51c21e2ecf59af384e3464aecd428ecdbfa4",
+    "inputHex": "4142430a",
+    "outputHex": "d24141427c",
+    "terminal": "HALTED",
+    "step": 27,
+    "final": {
+      "kind": "after",
+      "step": 27,
+      "a": 29550,
+      "c": 62,
+      "d": 86,
+      "halted": true
+    },
+    "revisits": [
+      {
+        "address": 99,
+        "firstStep": 1,
+        "nextStep": 8,
+        "firstRaw": 63,
+        "nextRaw": 43,
+        "firstDecoded": "o",
+        "nextDecoded": "C"
+      },
+      {
+        "address": 100,
+        "firstStep": 2,
+        "nextStep": 9,
+        "firstRaw": 33,
+        "nextRaw": 53,
+        "firstDecoded": "*",
+        "nextDecoded": "x"
+      },
+      {
+        "address": 101,
+        "firstStep": 3,
+        "nextStep": 10,
+        "firstRaw": 92,
+        "nextRaw": 115,
+        "firstDecoded": "<",
+        "nextDecoded": "n"
+      },
+      {
+        "address": 102,
+        "firstStep": 4,
+        "nextStep": 11,
+        "firstRaw": 90,
+        "nextRaw": 90,
+        "firstDecoded": "i",
+        "nextDecoded": "i"
+      }
+    ],
+    "tracePath": "extended/revisit-search-003/trace.jsonl",
+    "initialPath": "extended/revisit-search-003/initial.u16",
+    "finalPath": "extended/revisit-search-003/final.u16",
+    "synthesis": {
+      "seed": 20260927,
+      "attempt": 3,
+      "length": 128,
+      "method": "bounded offline fixture search, not app feature"
+    }
+  },
+  "reference": "original-C bounded instrumented",
+  "productCompared": false
+}

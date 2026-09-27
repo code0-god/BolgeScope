@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "kind": "supervisor-JSONL-file-integrity",
+  "checks": [
+    {
+      "name": "trace-source-true-input-true",
+      "status": "PASS",
+      "bytes": 16844
+    },
+    {
+      "name": "trace-source-true-input-false",
+      "status": "PASS",
+      "bytes": 16862
+    },
+    {
+      "name": "trace-source-false-input-true",
+      "status": "PASS",
+      "bytes": 16634
+    },
+    {
+      "name": "trace-source-false-input-false",
+      "status": "PASS",
+      "bytes": 16648
+    }
+  ]
+}

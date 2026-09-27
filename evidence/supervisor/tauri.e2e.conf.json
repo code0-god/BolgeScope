@@ -1,0 +1,13 @@
+{
+  "productName": "BolgeScope QA",
+  "identifier": "dev.bolgescope.desktop.qa",
+  "app": {
+    "windows": [{"label":"main","title":"BolgeScope QA — native acceptance","width":1440,"height":900,"minWidth":900,"minHeight":600}],
+    "security": {
+      "capabilities": [
+        "main",
+        {"identifier":"qa-webdriver","windows":["main"],"permissions":["wdio-webdriver:default"]}
+      ]
+    }
+  }
+}

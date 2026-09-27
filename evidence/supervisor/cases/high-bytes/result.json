@@ -1,0 +1,26 @@
+{
+  "name": "high-bytes",
+  "inputHex": "007f80ff",
+  "outputHex": "55",
+  "step": 24,
+  "finalRegisters": {
+    "a": 29269,
+    "c": 23,
+    "d": 80
+  },
+  "dataWrites78": [
+    29524,
+    29424,
+    29415,
+    29269
+  ],
+  "initialMemorySha256": "b63c00aef8373b4779846a772a1d821370a2390770f1fcc92d6e973b35ca5922",
+  "finalMemorySha256": "cc5e8a614f7862c8029c860bd50f92d0cb1bc6a732a8cef4598c6ead1a329689",
+  "assertions": {
+    "tracedEqualsOriginal": true,
+    "halted": true,
+    "steps24": true,
+    "xlat2NulBoundary": true
+  },
+  "status": "PASS"
+}

@@ -1,0 +1,64 @@
+{
+  "name": "revisit-search-003",
+  "raw": "b'&__?!=<;GWVUgf4RcOO/pL98I6G!WfCB\".-,`<)yrw6YGF!D1on@lO+c)af_qF5D3B}]@?g,evu8r6_5Jnllj|igge)vQP<r^?!\\ZZYWyhwwuuQPO/Ln&mHHjXW2$e",
+  "sourceSha256": "c7be2fb97a66b0d3f5b13ba4c2ec51c21e2ecf59af384e3464aecd428ecdbfa4",
+  "inputHex": "4142430a",
+  "outputHex": "d24141427c",
+  "terminal": "HALTED",
+  "step": 27,
+  "final": {
+    "kind": "after",
+    "step": 27,
+    "a": 29550,
+    "c": 62,
+    "d": 86,
+    "halted": true
+  },
+  "revisits": [
+    {
+      "address": 99,
+      "firstStep": 1,
+      "nextStep": 8,
+      "firstRaw": 63,
+      "nextRaw": 43,
+      "firstDecoded": "o",
+      "nextDecoded": "C"
+    },
+    {
+      "address": 100,
+      "firstStep": 2,
+      "nextStep": 9,
+      "firstRaw": 33,
+      "nextRaw": 53,
+      "firstDecoded": "*",
+      "nextDecoded": "x"
+    },
+    {
+      "address": 101,
+      "firstStep": 3,
+      "nextStep": 10,
+      "firstRaw": 92,
+      "nextRaw": 115,
+      "firstDecoded": "<",
+      "nextDecoded": "n"
+    },
+    {
+      "address": 102,
+      "firstStep": 4,
+      "nextStep": 11,
+      "firstRaw": 90,
+      "nextRaw": 90,
+      "firstDecoded": "i",
+      "nextDecoded": "i"
+    }
+  ],
+  "tracePath": "extended/revisit-search-003/trace.jsonl",
+  "initialPath": "extended/revisit-search-003/initial.u16",
+  "finalPath": "extended/revisit-search-003/final.u16",
+  "synthesis": {
+    "seed": 20260927,
+    "attempt": 3,
+    "length": 128,
+    "method": "bounded offline fixture search, not app feature"
+  }
+}

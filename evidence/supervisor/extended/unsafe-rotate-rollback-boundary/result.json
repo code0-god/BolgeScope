@@ -1,0 +1,14 @@
+{
+  "name": "unsafe-rotate-rollback-boundary",
+  "raw": "'P",
+  "sourceSha256": "290b94859ef5e6a1dad3b01cd97a3a7b43fdd48e9b4d04cbea3a895ecb193ee7",
+  "inputHex": "",
+  "outputHex": "",
+  "terminal": "REFERENCE_UNDEFINED",
+  "step": 0,
+  "final": null,
+  "revisits": [],
+  "tracePath": "extended/unsafe-rotate-rollback-boundary/trace.jsonl",
+  "initialPath": "extended/unsafe-rotate-rollback-boundary/initial.u16",
+  "finalPath": "extended/unsafe-rotate-rollback-boundary/final.u16"
+}
