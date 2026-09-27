@@ -32,7 +32,14 @@ export type Command =
   | Readonly<{ command: 'ackTraceExport'; payload: { exportId: string; chunkIndex: number } }>
   | Readonly<{ command: 'cancelTraceExport'; payload: { exportId: string } }>;
 export type Request = Readonly<{ protocolVersion: 1; clientEpoch: number; requestId: string; requestSequence: number; sessionId?: string; branchId?: string; command: Command['command']; payload: unknown }>;
-export type Response = Readonly<{ protocolVersion: 1; clientEpoch: number; requestId: string; sessionId: string | null; result: { ok: true; value: RuntimeValue } | { ok: false; code: string; message: string } }>;
+export type Response = Readonly<{
+  protocolVersion: 1;
+  clientEpoch: number;
+  committedEpoch: number;
+  requestId: string;
+  sessionId: string | null;
+  result: { ok: true; value: RuntimeValue } | { ok: false; code: string; message: string };
+}>;
 export type TraceChunk = Readonly<{ exportId: string; chunkIndex: number; bytes: Uint8Array; done: boolean; totalBytes: number; digest: string }>;
 export type RuntimeValue = MachineState | PointView | ViewBundle | TraceChunk | readonly JournalEvent[] | Uint8Array | Uint16Array;
 export type StateEvent = Readonly<{ protocolVersion: 1; clientEpoch: number; sessionId: string; type: 'state'; summary: MachineState }>;

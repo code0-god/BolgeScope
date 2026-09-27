@@ -15,7 +15,7 @@ export type JournalEvent = Readonly<{ eventIndex: number; stepAfter: number; kin
   Readonly<{ eventIndex: number; stepAfter: number; kind: 'inputAppend'; bytes: readonly number[]; visibleLengthBefore: number }> |
   Readonly<{ eventIndex: number; stepAfter: number; kind: 'inputClose'; closedBefore: false }> |
   Readonly<{ eventIndex: number; stepAfter: number; kind: 'fault'; fault: Fault; terminalBefore: MachineHead['terminal'] }>;
-export type Phase = 'READY' | 'RUNNING' | 'PAUSED' | 'WAITING_INPUT' | 'HALTED' | 'FAULTED';
+export type Phase = 'READY' | 'RUNNING' | 'REWINDING' | 'PAUSED' | 'WAITING_INPUT' | 'HALTED' | 'FAULTED';
 export type StopReason = 'NONE' | 'STEP_COMPLETE' | 'INPUT_EMPTY' | 'HALT_OPCODE' | 'BUDGET' | 'HISTORY_BOUNDARY' | 'REWOUND' | 'STALLED_INVALID_FETCH' | 'REFERENCE_UNDEFINED' | 'REPLAY_DIVERGED' | 'OUTPUT_LIMIT' | 'RESOURCE_LIMIT' | 'BREAKPOINT' | 'WATCHPOINT';
 export type Watchpoint = Readonly<{ address: number; roles: readonly ('data-read' | 'data-write' | 'encryption')[] }>;
 export type RoleCounts = Readonly<{ fetch: number; dataRead: number; dataWrite: number; encryption: number }>;

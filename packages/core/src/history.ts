@@ -4,6 +4,14 @@ export type HistorySource = Readonly<{
   memory: Uint16Array; head: MachineHead; output: readonly number[];
   journal: readonly JournalEvent[]; liveIndex: number; earliestIndex: number;
 }>;
+export type ReverseTarget = Readonly<{ eventIndex: number; reason: 'BREAKPOINT' | 'WATCHPOINT' | 'HISTORY_BOUNDARY' }>;
+export type ReverseSearchCursor = Readonly<{ fromEventIndex: number; nextEventIndex: number }>;
+export type ReverseSearchSlice = Readonly<{
+  cursor: ReverseSearchCursor;
+  scanned: number;
+  target: ReverseTarget | null;
+  done: boolean;
+}>;
 
 export function historicalPoint(source: HistorySource, eventIndex: number, start: number, count: number): Omit<PointView, 'roles'> {
   const memory = source.memory.slice(start, start + count);
@@ -46,12 +54,46 @@ export function matchesWatchpoint(transaction: Transaction, watchpoints: readonl
     transaction.writes.some(write => watchpoint.address === write.address && watchpoint.roles.includes(write.role)));
 }
 
-export function reverseTarget(journal: readonly JournalEvent[], from: number, earliest: number, breakpoints: ReadonlySet<number>, watchpoints: readonly Watchpoint[]): { eventIndex: number; reason: 'BREAKPOINT' | 'WATCHPOINT' | 'HISTORY_BOUNDARY' } {
-  for (let index = from; index > earliest; index--) {
+export function reverseTargetSlice(
+  journal: readonly JournalEvent[],
+  cursor: ReverseSearchCursor,
+  earliest: number,
+  breakpoints: ReadonlySet<number>,
+  watchpoints: readonly Watchpoint[],
+  maxEvents = 512,
+  maxMilliseconds = 8,
+): ReverseSearchSlice {
+  if (!Number.isSafeInteger(maxEvents) || maxEvents < 1 || !Number.isFinite(maxMilliseconds) || maxMilliseconds < 0) throw new RangeError('Invalid reverse search slice');
+  const started = performance.now();
+  let index = cursor.nextEventIndex;
+  let scanned = 0;
+  while (index > earliest && scanned < maxEvents) {
     const event = journal[index - earliest - 1];
-    if (event?.kind !== 'instruction') continue;
-    if (breakpoints.has(event.transaction.fetchAddress)) return { eventIndex: index - 1, reason: 'BREAKPOINT' };
-    if (index < from && matchesWatchpoint(event.transaction, watchpoints)) return { eventIndex: index, reason: 'WATCHPOINT' };
+    if (!event) throw new RangeError('HISTORY_EXPIRED');
+    scanned++;
+    const nextEventIndex = index - 1;
+    if (event.kind === 'instruction') {
+      if (breakpoints.has(event.transaction.fetchAddress)) {
+        return { cursor: { ...cursor, nextEventIndex }, scanned, target: { eventIndex: nextEventIndex, reason: 'BREAKPOINT' }, done: true };
+      }
+      if (index < cursor.fromEventIndex && matchesWatchpoint(event.transaction, watchpoints)) {
+        return { cursor: { ...cursor, nextEventIndex }, scanned, target: { eventIndex: index, reason: 'WATCHPOINT' }, done: true };
+      }
+    }
+    index = nextEventIndex;
+    if (performance.now() - started >= Math.min(maxMilliseconds, 8)) break;
   }
-  return { eventIndex: earliest, reason: 'HISTORY_BOUNDARY' };
+  const next = { ...cursor, nextEventIndex: index };
+  return index === earliest
+    ? { cursor: next, scanned, target: { eventIndex: earliest, reason: 'HISTORY_BOUNDARY' }, done: true }
+    : { cursor: next, scanned, target: null, done: false };
+}
+
+export function reverseTarget(journal: readonly JournalEvent[], from: number, earliest: number, breakpoints: ReadonlySet<number>, watchpoints: readonly Watchpoint[]): ReverseTarget {
+  let cursor: ReverseSearchCursor = { fromEventIndex: from, nextEventIndex: from };
+  while (true) {
+    const slice = reverseTargetSlice(journal, cursor, earliest, breakpoints, watchpoints, Number.MAX_SAFE_INTEGER, 8);
+    if (slice.target) return slice.target;
+    cursor = slice.cursor;
+  }
 }

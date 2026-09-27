@@ -7,6 +7,10 @@ import { TestWorkerClient } from '../src/test-client.ts';
 import { encode } from '@bolgescope/core';
 
 const fixture = readFileSync(new URL('../../../docs/desktop-v0.1/fixtures/recurrent_crazy4.mb', import.meta.url), 'utf8');
+const longFixture = Array.from(
+  { length: 20_000 },
+  (_, address) => String.fromCharCode(encode(address === 19_999 ? 'v' : 'o', address)),
+).join('');
 const delay = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 const bridges = [];
 
@@ -27,12 +31,59 @@ class Bridge {
 afterEach(async () => { await Promise.all(bridges.splice(0).map(bridge => bridge.terminate())); });
 
 async function client() { const bridge = new Bridge(); await bridge.ready; return new RuntimeClient(bridge); }
+async function bounded(promise, milliseconds = 1000) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Promise did not settle')), milliseconds);
+  });
+  try { return await Promise.race([promise, timeout]); }
+  finally { clearTimeout(timer); }
+}
+function nextState(runtime, predicate) {
+  return new Promise(resolve => {
+    const unsubscribe = runtime.subscribe(state => {
+      if (!predicate(state)) return;
+      unsubscribe();
+      resolve(state);
+    });
+  });
+}
+async function clientWithLongHistory() {
+  const runtime = await client();
+  await runtime.load(longFixture);
+  const halted = nextState(runtime, state => state.phase === 'HALTED');
+  await runtime.run(20_000);
+  await bounded(halted, 5000);
+  return runtime;
+}
 async function until(runtime, predicate) {
   for (let i = 0; i < 300; i++) { const state = await runtime.getState(); if (predicate(state)) return state; await delay(10); }
   throw new Error('State timeout');
 }
 
 describe('real runtime worker', () => {
+  it('settles the latest load after superseding an invalid in-flight load', async () => {
+    // Given two loads posted to the real Worker without awaiting the first.
+    const bridge = new Bridge();
+    await bridge.ready;
+    const runtime = new RuntimeClient(bridge);
+    const stale = runtime.load('!');
+    const latest = runtime.load(fixture);
+
+    try {
+      // When the first promise is cancelled and its Worker response races load B.
+      await expect(stale).rejects.toThrow(/STALE_SESSION/);
+      const state = await bounded(latest);
+
+      // Then B settles and the resulting session accepts a follow-up command.
+      expect(state.head.step).toBe(0);
+      expect(runtime.getSessionId()).toBeTruthy();
+      expect((await bounded(runtime.step())).head.step).toBe(1);
+    } finally {
+      runtime.terminate();
+    }
+  });
+
   it('waits for one byte and commits exactly one Step', async () => {
     const runtime = await client();
     await runtime.load(fixture);
@@ -44,6 +95,27 @@ describe('real runtime worker', () => {
     expect(state.head.step).toBe(before + 1);
     expect(state.head.tape.cursor).toBe(1);
   });
+  it('publishes an input-wait transition even when no instruction version changes', async () => {
+    // Given a real Worker session whose next Step will wait without committing.
+    const runtime = await client();
+    await runtime.load(fixture);
+    const seen = [];
+    runtime.subscribe(state => seen.push(state));
+    let returned = await runtime.step();
+    while (returned.phase !== 'WAITING_INPUT') returned = await runtime.step();
+
+    // When the Worker returns WAITING_INPUT with the previous committed version.
+    const current = runtime.getCurrentState();
+
+    // Then both the current-state cache and subscribers expose that transition.
+    expect(current).toMatchObject({
+      phase: 'WAITING_INPUT',
+      reason: 'INPUT_EMPTY',
+      stateVersion: returned.stateVersion,
+      head: { step: returned.head.step },
+    });
+    expect(seen.at(-1)).toEqual(returned);
+  });
   it('preserves a session after failed load and clears it after stop', async () => {
     const runtime = await client();
     await runtime.load(fixture);
@@ -53,6 +125,24 @@ describe('real runtime worker', () => {
     await runtime.stop();
     expect(runtime.getCurrentState()).toBeNull();
     await expect(runtime.getState()).rejects.toThrow(/SESSION_MISMATCH/);
+  });
+  it('publishes each committed lifecycle state once with its current session', async () => {
+    // Given a real Worker subscription before any session exists.
+    const runtime = await client();
+    const states = [];
+    runtime.subscribe(state => states.push(state));
+
+    // When load and restart each commit a new session generation.
+    const loaded = await runtime.load(fixture);
+    const firstSession = runtime.getSessionId();
+    const restarted = await runtime.restart();
+
+    // Then stale pre-commit events are suppressed and each committed state publishes once.
+    expect(states).toHaveLength(2);
+    expect(states[0]).toEqual(loaded);
+    expect(states[1]).toEqual(restarted);
+    expect(runtime.getSessionId()).not.toBe(firstSession);
+    expect(runtime.getCurrentState()).toEqual(restarted);
   });
   it('finishes the fixture on Run with a live memory query', async () => {
     const runtime = await client();
@@ -170,5 +260,95 @@ describe('real runtime worker', () => {
     await expect(runtime.step()).rejects.toThrow(/BUSY/);
     const state = await until(runtime, current => current.phase === 'HALTED');
     expect(state.head.step).toBe(20_000);
+  });
+
+  it('pauses reverse target search before execution position changes', async () => {
+    // Given enough real history for reverse search to require multiple slices.
+    const runtime = await clientWithLongHistory();
+    await runtime.setBreakpoints([1]);
+    const tail = runtime.getCurrentState()?.eventIndex;
+    const searching = nextState(runtime, state => state.phase === 'REWINDING' && state.eventIndex === tail);
+
+    // When Pause is sent after sliced target search becomes observable.
+    const reversing = runtime.reverseContinue();
+    void reversing.catch(() => undefined);
+    const searchState = await bounded(searching, 5000);
+    const paused = await runtime.pause();
+    await bounded(reversing, 5000);
+
+    // Then search made no machine movement and queued slices cannot move it later.
+    expect(searchState.eventIndex).toBe(tail);
+    expect(paused.eventIndex).toBe(tail);
+    expect((await runtime.getState()).eventIndex).toBe(tail);
+  });
+
+  it('pauses sliced rewind on a complete journal event boundary', async () => {
+    // Given enough real history for rewind restoration to require multiple slices.
+    const runtime = await clientWithLongHistory();
+    const tail = runtime.getCurrentState()?.eventIndex ?? 0;
+    const restoring = nextState(runtime, state =>
+      state.phase === 'REWINDING' && state.eventIndex > 0 && state.eventIndex < tail);
+
+    // When Pause arrives after at least one complete restore slice.
+    const rewinding = runtime.rewindTo(0);
+    void rewinding.catch(() => undefined);
+    const partial = await bounded(restoring, 5000);
+    const paused = await runtime.pause();
+    await bounded(rewinding, 5000);
+
+    // Then the last complete event is stable after all queued callbacks run.
+    expect(partial.eventIndex).toBeGreaterThan(0);
+    expect(paused.eventIndex).toBe(partial.eventIndex);
+    const stable = await runtime.getState();
+    expect(stable.eventIndex).toBe(paused.eventIndex);
+    expect(stable.head.step).toBe(paused.head.step);
+  });
+
+  it('stops sliced rewind and prevents queued callbacks from touching a new session', async () => {
+    // Given restore work that has moved across at least one complete event.
+    const runtime = await clientWithLongHistory();
+    const tail = runtime.getCurrentState()?.eventIndex ?? 0;
+    const restoring = nextState(runtime, state =>
+      state.phase === 'REWINDING' && state.eventIndex > 0 && state.eventIndex < tail);
+    const rewinding = runtime.rewindTo(0);
+    void rewinding.catch(() => undefined);
+    await bounded(restoring, 5000);
+
+    // When Stop cancels restore, then a new fixture session starts.
+    await runtime.stop();
+    await expect(rewinding).rejects.toThrow(/STALE_SESSION|OPERATION_CANCELLED/);
+    expect(runtime.getCurrentState()).toBeNull();
+    await runtime.load(fixture);
+    const stepped = await runtime.step();
+    const stable = await runtime.getState();
+
+    // Then stale restore callbacks cannot mutate the replacement VM.
+    expect(stepped.head.step).toBe(1);
+    expect(stable.branchId).toBe(stepped.branchId);
+    expect(stable.eventIndex).toBe(stepped.eventIndex);
+    expect(stable.head).toEqual(stepped.head);
+  });
+
+  it('cancels reverse search when a new session replaces its generation', async () => {
+    // Given sliced reverse search on a long-running session.
+    const runtime = await clientWithLongHistory();
+    await runtime.setBreakpoints([1]);
+    const tail = runtime.getCurrentState()?.eventIndex;
+    const searching = nextState(runtime, state => state.phase === 'REWINDING' && state.eventIndex === tail);
+    const reversing = runtime.reverseContinue();
+    void reversing.catch(() => undefined);
+    await bounded(searching, 5000);
+
+    // When a load replaces the searching session.
+    const loaded = await runtime.load(fixture);
+    await expect(reversing).rejects.toThrow(/STALE_SESSION|OPERATION_CANCELLED/);
+    const stepped = await runtime.step();
+    const stable = await runtime.getState();
+
+    // Then only the replacement generation can move the machine.
+    expect(loaded.head.step).toBe(0);
+    expect(stepped.head.step).toBe(1);
+    expect(stable.branchId).toBe(loaded.branchId);
+    expect(stable.head).toEqual(stepped.head);
   });
 });

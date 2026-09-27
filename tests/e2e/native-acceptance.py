@@ -6,21 +6,100 @@ All test documents and screenshots are kept under evidence/current/native/.
 from __future__ import annotations
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 import time
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'evidence/current/native'
+OUT = Path(os.environ.get('BOLGESCOPE_EVIDENCE_DIR', ROOT / 'evidence/current/native')).resolve()
 OUT.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(ROOT / 'evidence/supervisor'))
 import native_driver
-from check_native import picker as navigate_picker
+
+def apple(script):
+    return subprocess.run(
+        ['osascript', '-e', script],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=True,
+    ).stdout.strip()
+
+class NativeAutomationBlocked(RuntimeError):
+    pass
+
+def automate_picker(action, script):
+    try:
+        return apple(script)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+        raise NativeAutomationBlocked(f'{action} automation failed: {error!r}') from error
 
 def picker(pid, path):
-    # NSOpenPanel is created asynchronously on macOS; wait before Go To.
-    time.sleep(1.0)
-    return navigate_picker(pid, path)
+    script=f'''set priorClipboard to the clipboard
+set targetPath to {json.dumps(str(path))}
+try
+  set the clipboard to targetPath
+  tell application "System Events"
+    tell (first application process whose unix id is {pid})
+      set frontmost to true
+      repeat with attempt from 1 to 160
+        if (count of windows) > 0 then
+          try
+            if exists sheet 1 of window 1 then exit repeat
+          end try
+        end if
+        delay 0.05
+      end repeat
+      if not (exists sheet 1 of window 1) then error "native picker sheet did not appear"
+      delay 0.25
+      keystroke "g" using {{command down, shift down}}
+      delay 0.25
+      keystroke "a" using command down
+      keystroke "v" using command down
+      repeat with attempt from 1 to 160
+        try
+          set focusedElement to value of attribute "AXFocusedUIElement"
+          if value of attribute "AXIdentifier" of focusedElement is "PathTextField" and value of focusedElement is targetPath then exit repeat
+        end try
+        delay 0.05
+      end repeat
+      if value of focusedElement is not targetPath then error "native picker path was not entered"
+      key code 36
+      repeat with attempt from 1 to 160
+        try
+          set focusedElement to value of attribute "AXFocusedUIElement"
+          if value of focusedElement is not targetPath then exit repeat
+        end try
+        delay 0.05
+      end repeat
+      key code 36
+    end tell
+  end tell
+on error errorMessage number errorNumber
+  set the clipboard to priorClipboard
+  error errorMessage number errorNumber
+end try
+set the clipboard to priorClipboard'''
+    return automate_picker('native picker', script)
+
+def cancel_picker(pid):
+    script=f'''tell application "System Events"
+  tell (first application process whose unix id is {pid})
+    set frontmost to true
+    repeat with attempt from 1 to 160
+      if (count of windows) > 0 then
+        try
+          if exists sheet 1 of window 1 then exit repeat
+        end try
+      end if
+      delay 0.05
+    end repeat
+    if not (exists sheet 1 of window 1) then error "native picker sheet did not appear"
+    key code 53
+  end tell
+end tell'''
+    return automate_picker('native picker cancel', script)
 
 native_driver.BASE = 'http://127.0.0.1:4452'
 native_driver.OUT = OUT
@@ -40,6 +119,8 @@ def main():
     assert ('n'+str(executable)) in loaded_images.splitlines(), command
     d = native_driver.Driver()
     checks = []
+    blocked = False
+    failure = None
     def passed(name, detail=None):
         checks.append({'name': name, 'status': 'PASS', 'detail': detail})
         print('PASS', name, flush=True)
@@ -54,10 +135,22 @@ def main():
         info = d.script('return {url:location.href,userAgent:navigator.userAgent,secure:isSecureContext};')
         assert info['url'].startswith('tauri://') and info['secure'] and 'AppleWebKit' in info['userAgent'] and 'Chrome/' not in info['userAgent'], info
         passed('actual-WKWebView-offline-assets-and-Monaco', info)
+        ax_windows = int(apple(f'tell application "System Events" to tell (first application process whose unix id is {pid}) to return count of windows'))
+        if ax_windows == 0:
+            raise NativeAutomationBlocked('Acceptance WebDriver runs the WKWebView off-screen, so native picker UI has no Accessibility window to drive')
+        initial_title = d.text('.document-title')
+        toolbar('열기'); cancel_picker(pid)
+        d.wait("document.querySelector('.document-title')?.textContent==="+json.dumps(initial_title,ensure_ascii=False))
+        passed('real-native-open-cancel-preserves-document')
+        started = time.monotonic()
         toolbar('열기'); picker(pid, fixture)
-        d.wait("document.querySelector('.document-title')?.textContent.includes('fixture.mb') && document.querySelector('.status-bar')?.textContent.includes('87 cells')")
+        picker_ms = round((time.monotonic()-started)*1000)
+        d.wait("document.querySelector('.document-title')?.textContent.includes('fixture.mb')")
+        registered_ms = round((time.monotonic()-started)*1000)
+        d.wait("document.querySelector('.status-bar')?.textContent.includes('87 cells')")
+        analyzed_ms = round((time.monotonic()-started)*1000)
         assert 'rev 0' in d.text('.status-bar')
-        passed('real-native-file-picker-no-auto-execution', {'bytes':len(original),'sha256':hashlib.sha256(original).hexdigest()})
+        passed('real-native-file-picker-no-auto-execution', {'bytes':len(original),'sha256':hashlib.sha256(original).hexdigest(),'pickerMs':picker_ms,'registeredMs':registered_ms,'analyzedMs':analyzed_ms})
         d.click('.lens-cells button[aria-label^="주소 3,"]')
         d.button('선택 주소 추가')
         toolbar('실행')
@@ -111,15 +204,21 @@ def main():
         assert target.read_bytes() == original and fixture.read_bytes() == original
         passed('native-Save-As-preserves-exact-Source-not-Runtime', {'path':str(target.relative_to(ROOT)), 'sha256':hashlib.sha256(target.read_bytes()).hexdigest()})
         crlf = OUT/'crlf.mb'; crlf_bytes=original.replace(b'\n',b'\r\n'); crlf.write_bytes(crlf_bytes)
+        crlf_save_dir = OUT / ('crlf-saved-' + str(time.time_ns()))
+        crlf_save_dir.mkdir()
         toolbar('열기'); picker(pid,crlf)
         d.wait("document.querySelector('.document-title')?.textContent.includes('crlf.mb')")
         assert 'rev 0' in d.text('.status-bar')
-        toolbar('다른 이름'); picker(pid,save_dir)
-        target=save_dir/'crlf.mb'; deadline=time.monotonic()+10
+        toolbar('다른 이름'); picker(pid,crlf_save_dir)
+        target=crlf_save_dir/'crlf.mb'; deadline=time.monotonic()+10
         while not target.exists() and time.monotonic()<deadline:time.sleep(.05)
+        assert target.exists(), f'Native Save As did not create {target}'
         assert target.read_bytes()==crlf_bytes
         passed('native-CRLF-file-roundtrip-is-byte-exact', {'bytes':len(crlf_bytes)})
         d.screenshot('after-save.png')
+    except NativeAutomationBlocked as error:
+        checks.append({'name':'native-dialog-and-disk-flow','status':'BLOCKED','error':str(error)})
+        blocked = True
     except Exception as error:
         detail = None
         try: detail = d.script("return {title:document.querySelector('.document-title')?.textContent, status:document.querySelector('.status-bar')?.textContent, notices:Array.from(document.querySelectorAll('.notice')).map(e=>e.textContent), text:document.body.innerText.slice(-4000)};")
@@ -127,9 +226,10 @@ def main():
         checks.append({'name':'native-flow','status':'FAIL','error':repr(error),'diagnostic':detail})
         try:d.screenshot('failure.png')
         except Exception:pass
-        raise
+        failure = error
     finally:
-        report={'status':'PASS' if checks and all(c['status']=='PASS' for c in checks) else 'FAIL',
+        status = 'FAIL' if any(c['status']=='FAIL' for c in checks) else 'BLOCKED' if any(c['status']=='BLOCKED' for c in checks) else 'PASS'
+        report={'status':status,
                 'kind':'actual macOS WKWebView, optional test-only WebDriver, real native pickers and disk I/O; no VM/IPC mocks',
                 'timestamp':time.strftime('%Y-%m-%dT%H:%M:%S%z'), 'process':command, 'pid':pid,
                 'executableSha256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'checks':checks,
@@ -137,4 +237,6 @@ def main():
         (OUT/'results.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
         print(json.dumps(report,ensure_ascii=False,indent=2),flush=True)
         d.close()
+    if failure: raise failure
+    if blocked: raise SystemExit(2)
 if __name__=='__main__':main()

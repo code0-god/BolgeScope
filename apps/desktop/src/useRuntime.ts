@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MEMORY_SIZE, type JournalEvent, type MachineHead, type MachineState, type RoleCounts, type SourceKind, type Watchpoint } from '@bolgescope/core';
 import { createWorkerClient, type TraceChunk, type ViewBundle, type ViewQuery } from '@bolgescope/runtime';
+import { OperationOwner } from './operationOwner';
 
 export type MemoryLookup = Readonly<Record<number, number | undefined>>;
 export type RoleLookup = Readonly<Record<number, RoleCounts | undefined>>;
@@ -38,6 +39,7 @@ function pageLookups(bundle: ViewBundle): { memory: MemoryLookup; initial: Memor
 export function useRuntime() {
   const client = useRef<ReturnType<typeof createWorkerClient> | null>(null);
   const [view, setView] = useState<View>(empty);
+  const commands = useRef(new OperationOwner());
   const generation = useRef(0);
   const selectedPoint = useRef<number | null>(null);
   const focus = useRef<Focus>({ selectedAddress: null, memoryPageStart: 0, overview: false });
@@ -114,24 +116,28 @@ export function useRuntime() {
     return () => {
       unsubscribe();
       if (refreshTimer.current !== null) clearTimeout(refreshTimer.current);
+      commands.current.invalidate();
       generation.current++;
       runtime.terminate();
       client.current = null;
     };
   }, [refresh]);
 
-  const command = useCallback(async (action: (runtime: NonNullable<typeof client.current>) => Promise<unknown>) => {
+  const command = useCallback(async (action: (runtime: NonNullable<typeof client.current>, owns: () => boolean) => Promise<unknown>) => {
     const runtime = client.current;
     if (!runtime) return;
+    const operation = commands.current.begin();
+    const owns = (): boolean => commands.current.owns(operation) && client.current === runtime;
     setView(previous => ({ ...previous, busy: true, error: null }));
     try {
-      await action(runtime);
+      await action(runtime, owns);
+      if (!owns()) return;
       await refresh();
     } catch (error) {
-      setView(previous => ({ ...previous, error: error instanceof Error ? error.message : String(error) }));
+      if (owns()) setView(previous => ({ ...previous, error: error instanceof Error ? error.message : String(error) }));
       throw error;
     } finally {
-      setView(previous => ({ ...previous, busy: false }));
+      if (owns()) setView(previous => ({ ...previous, busy: false }));
     }
   }, [refresh]);
 
@@ -158,12 +164,15 @@ export function useRuntime() {
           ? { ...previous, history: [...bundle.history.filter(entry => entry.eventIndex > bundle.liveState.earliestEventIndex && entry.eventIndex < (previous.history[0]?.eventIndex ?? Infinity)), ...previous.history] }
           : previous);
       } catch (error) {
-        setView(previous => ({ ...previous, error: error instanceof Error ? error.message : String(error) }));
-      } finally { setView(previous => ({ ...previous, historyLoading: false })); }
+        if (current === generation.current) setView(previous => ({ ...previous, error: error instanceof Error ? error.message : String(error) }));
+      } finally {
+        if (current === generation.current) setView(previous => ({ ...previous, historyLoading: false }));
+      }
     },
     configureView,
-    load: (source: string | Uint8Array, kind: SourceKind) => command(async runtime => {
+    load: (source: string | Uint8Array, kind: SourceKind) => command(async (runtime, owns) => {
       await runtime.load(source, kind);
+      if (!owns()) return;
       needsInitial.current = true; selectedPoint.current = null; overviewCache.current = null;
       setView(previous => ({ ...previous, point: null, initial: {}, memory: {}, roles: {}, history: [], snapshotSourceLength: 0 }));
     }),
@@ -171,25 +180,38 @@ export function useRuntime() {
     step: () => command(runtime => runtime.step()),
     pause: () => command(runtime => runtime.pause()),
     back: () => command(runtime => runtime.stepBack()),
-    restart: () => command(async runtime => {
+    restart: () => command(async (runtime, owns) => {
       await runtime.restart();
+      if (!owns()) return;
       needsInitial.current = true; selectedPoint.current = null; overviewCache.current = null;
       setView(previous => ({ ...previous, point: null, initial: {}, memory: {}, roles: {}, history: [], snapshotSourceLength: 0 }));
     }),
     stop: async () => {
       const current = client.current;
       if (!current) return;
-      await current.stop();
-      generation.current++; selectedPoint.current = null; overviewCache.current = null; needsInitial.current = false;
-      setView(empty);
+      const operation = commands.current.begin();
+      generation.current++;
+      setView(previous => ({ ...previous, busy: true, error: null }));
+      try {
+        await current.stop();
+        if (!commands.current.owns(operation) || client.current !== current) return;
+        selectedPoint.current = null; overviewCache.current = null; needsInitial.current = false;
+        setView(empty);
+      } catch (error) {
+        if (commands.current.owns(operation) && client.current === current) {
+          setView(previous => ({ ...previous, busy: false, error: error instanceof Error ? error.message : String(error) }));
+        }
+        throw error;
+      }
     },
     send: (bytes: Uint8Array) => command(runtime => runtime.appendInput(Array.from(bytes))),
     eof: () => command(runtime => runtime.closeInput()),
     breakpoints: (addresses: number[]) => command(runtime => runtime.setBreakpoints(addresses)),
     watchpoints: (points: readonly Watchpoint[]) => command(runtime => runtime.setWatchpoints(points)),
     reverse: () => command(runtime => runtime.reverseContinue()),
-    branch: (bytes: Uint8Array, closed: boolean, receipt: string) => command(async runtime => {
+    branch: (bytes: Uint8Array, closed: boolean, receipt: string) => command(async (runtime, owns) => {
       await runtime.createBranch(Array.from(bytes), closed, receipt);
+      if (!owns()) return;
       selectedPoint.current = null; overviewCache.current = null;
       setView(previous => ({ ...previous, point: null, memory: {}, roles: {} }));
     }),
@@ -202,8 +224,9 @@ export function useRuntime() {
       setView(previous => ({ ...previous, point: null }));
       await refresh();
     },
-    rewind: (eventIndex: number) => command(async runtime => {
+    rewind: (eventIndex: number) => command(async (runtime, owns) => {
       await runtime.rewindTo(eventIndex);
+      if (!owns()) return;
       selectedPoint.current = null; overviewCache.current = null;
       setView(previous => ({ ...previous, point: null, memory: {}, roles: {} }));
     }),

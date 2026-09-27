@@ -57,6 +57,8 @@ pub struct GrantStore(pub Mutex<HashMap<String, Grant>>);
 #[serde(rename_all = "camelCase")]
 pub struct GrantedFile {
     pub grant_id: String,
+    pub target_id: String,
+    pub request_id: Option<String>,
     pub name: String,
     pub bytes: Vec<u8>,
     pub disk_revision: String,
@@ -66,6 +68,7 @@ pub struct GrantedFile {
 #[serde(rename_all = "camelCase")]
 pub struct ProjectGrant {
     pub grant_id: String,
+    pub target_id: String,
     pub name: String,
 }
 
@@ -77,6 +80,18 @@ pub struct SavedFile {
 
 pub fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+pub fn path_identity(path: &Path) -> String {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStrExt;
+        digest(path.as_os_str().as_bytes())
+    }
+    #[cfg(not(unix))]
+    {
+        digest(path.to_string_lossy().as_bytes())
+    }
 }
 
 fn regular_file(path: &Path) -> NativeResult<()> {
@@ -140,6 +155,8 @@ pub fn read_file(path: &Path, grant_id: String, name: String) -> NativeResult<Gr
     let disk_revision = digest(&bytes);
     Ok(GrantedFile {
         grant_id,
+        target_id: path_identity(path),
+        request_id: None,
         name,
         bytes,
         disk_revision,

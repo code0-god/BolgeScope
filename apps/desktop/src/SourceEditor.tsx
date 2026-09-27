@@ -144,7 +144,7 @@ export default function SourceEditor({ modelKey, text, kind, analysis, readOnly,
     const model = editor.current?.getModel();
     if (!model) return;
     decorations.current?.set([selectedAddress, executionAddress].flatMap((address, index) => {
-      const cell = analysis.sourceMap[address ?? -1];
+      const cell = analysis.sourceMap.find(item => item.address === address);
       if (!cell) return [];
       const start = model.getPositionAt(cell.span.utf16Start);
       return [{ range: new monaco.Range(start.lineNumber, start.column, start.lineNumber, start.column + 1), options: { inlineClassName: index === 0 ? 'selected-cell' : 'execution-cell', hoverMessage: { value: index === 0 ? '선택한 주소' : '실행 위치' } } }];
@@ -154,7 +154,7 @@ export default function SourceEditor({ modelKey, text, kind, analysis, readOnly,
   useEffect(() => {
     const instance = editor.current;
     if (!replacement || !instance || readOnly || replacement.nonce === lastReplacement.current) return;
-    const cell = analysis.sourceMap[replacement.address];
+    const cell = analysis.sourceMap.find(item => item.address === replacement.address);
     if (!cell) return;
     const start = instance.getModel()?.getPositionAt(cell.span.utf16Start);
     if (!start) return;

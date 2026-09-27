@@ -12,8 +12,8 @@ use project_path::project_path;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use storage::{
-    canonical_file, canonical_project, error, file_revision, new_id, read_file, save_file, Grant,
-    GrantStore, GrantedFile, NativeResult, ProjectGrant, SavedFile,
+    canonical_file, canonical_project, error, file_revision, new_id, path_identity, read_file,
+    save_file, Grant, GrantStore, GrantedFile, NativeResult, ProjectGrant, SavedFile,
 };
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
@@ -50,6 +50,14 @@ fn selected_path(path: tauri_plugin_dialog::FilePath) -> NativeResult<std::path:
         .map_err(|cause| error("INVALID_PATH", cause.to_string()))
 }
 
+fn valid_request_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+}
+
 #[cfg(test)]
 mod quit_tests {
     use super::{should_guard_quit, QuitApproval};
@@ -69,23 +77,48 @@ mod quit_tests {
 async fn select_file(
     app: AppHandle,
     store: State<'_, GrantStore>,
+    request_id: String,
 ) -> NativeResult<Option<GrantedFile>> {
-    let Some(selection) = app
-        .dialog()
-        .file()
-        .add_filter("Malbolge", &["mb", "mal", "nmal"])
-        .blocking_pick_file()
-    else {
+    if !valid_request_id(&request_id) {
+        return Err(error("INVALID_REQUEST", "Open request ID is invalid"));
+    }
+    eprintln!("native_open request={request_id} stage=dialog_requested");
+    let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+    let dialog_app = app.clone();
+    app.run_on_main_thread(move || {
+        dialog_app
+            .dialog()
+            .file()
+            .add_filter("Malbolge", &["mb", "mal", "nmal"])
+            .pick_file(move |selection| {
+                if sender.send(selection).is_err() {
+                    eprintln!("native_open stage=callback_abandoned");
+                }
+            });
+    })
+    .map_err(|cause| error("IO_ERROR", cause.to_string()))?;
+    let selection = tauri::async_runtime::spawn_blocking(move || receiver.recv())
+        .await
+        .map_err(|cause| error("IO_ERROR", cause.to_string()))?
+        .map_err(|cause| error("IO_ERROR", cause.to_string()))?;
+    let Some(selection) = selection else {
+        eprintln!("native_open request={request_id} stage=cancelled");
         return Ok(None);
     };
+    eprintln!("native_open request={request_id} stage=selected");
     let path = canonical_file(&selected_path(selection)?)?;
     let grant_id = new_id();
-    let file = read_file(&path, grant_id.clone(), file_name(&path))?;
+    let mut file = read_file(&path, grant_id.clone(), file_name(&path))?;
+    file.request_id = Some(request_id.clone());
     store
         .0
         .lock()
         .map_err(|_| error("IO_ERROR", "Grant table is unavailable"))?
         .insert(grant_id, Grant::File(path));
+    eprintln!(
+        "native_open request={request_id} stage=granted bytes={}",
+        file.bytes.len()
+    );
     Ok(Some(file))
 }
 
@@ -94,13 +127,28 @@ async fn select_project(
     app: AppHandle,
     store: State<'_, GrantStore>,
 ) -> NativeResult<Option<ProjectGrant>> {
-    let Some(selection) = app.dialog().file().blocking_pick_folder() else {
+    let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+    let dialog_app = app.clone();
+    app.run_on_main_thread(move || {
+        dialog_app.dialog().file().pick_folder(move |selection| {
+            if sender.send(selection).is_err() {
+                eprintln!("native_project stage=callback_abandoned");
+            }
+        });
+    })
+    .map_err(|cause| error("IO_ERROR", cause.to_string()))?;
+    let selection = tauri::async_runtime::spawn_blocking(move || receiver.recv())
+        .await
+        .map_err(|cause| error("IO_ERROR", cause.to_string()))?
+        .map_err(|cause| error("IO_ERROR", cause.to_string()))?;
+    let Some(selection) = selection else {
         return Ok(None);
     };
     let root = canonical_project(&selected_path(selection)?)?;
     let grant_id = new_id();
     let project = ProjectGrant {
         grant_id: grant_id.clone(),
+        target_id: path_identity(&root),
         name: file_name(&root),
     };
     store
@@ -167,13 +215,27 @@ async fn save_as(
     {
         return Err(error("INVALID_PATH", "Suggested name must be a filename"));
     }
-    let Some(selection) = app
-        .dialog()
-        .file()
-        .set_file_name(&suggested_name)
-        .add_filter("Malbolge", &["mb", "mal", "nmal"])
-        .blocking_save_file()
-    else {
+    let dialog_name = suggested_name.clone();
+    let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+    let dialog_app = app.clone();
+    app.run_on_main_thread(move || {
+        dialog_app
+            .dialog()
+            .file()
+            .set_file_name(&dialog_name)
+            .add_filter("Malbolge", &["mb", "mal", "nmal"])
+            .save_file(move |selection| {
+                if sender.send(selection).is_err() {
+                    eprintln!("native_save_as stage=callback_abandoned");
+                }
+            });
+    })
+    .map_err(|cause| error("IO_ERROR", cause.to_string()))?;
+    let selection = tauri::async_runtime::spawn_blocking(move || receiver.recv())
+        .await
+        .map_err(|cause| error("IO_ERROR", cause.to_string()))?
+        .map_err(|cause| error("IO_ERROR", cause.to_string()))?;
+    let Some(selection) = selection else {
         return Ok(None);
     };
     let chosen = selected_path(selection)?;

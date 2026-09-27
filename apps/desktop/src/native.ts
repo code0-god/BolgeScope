@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 
-export type GrantedFile = { grantId: string; name: string; bytes: number[]; diskRevision: string };
+export type GrantedFile = { grantId: string; targetId: string; requestId: string | null; name: string; bytes: number[]; diskRevision: string };
 export type NativeError = { code: string; message: string };
 export const nativeAvailable = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -10,7 +10,10 @@ function requireNative(): void {
 
 export async function openFile(): Promise<GrantedFile | null> {
   requireNative();
-  return invoke<GrantedFile | null>('select_file');
+  const requestId = crypto.randomUUID();
+  const file = await invoke<GrantedFile | null>('select_file', { requestId });
+  if (file && file.requestId !== requestId) throw new Error('IPC_SCHEMA: native open request ID mismatch');
+  return file;
 }
 
 export async function saveFile(grantId: string, bytes: Uint8Array, observedDiskRevision: string): Promise<string> {

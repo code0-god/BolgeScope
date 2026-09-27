@@ -1,17 +1,21 @@
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { chromium } from 'playwright';
 
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const results = [];
 const errors = [];
 const base = process.env.BOLGE_BASE_URL ?? 'http://127.0.0.1:1421';
+const evidenceDir = process.env.BOLGESCOPE_EVIDENCE_DIR ?? new URL('../../evidence/current/', import.meta.url).pathname;
+mkdirSync(evidenceDir, { recursive: true });
 
 async function fresh() {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.locator('.app-shell').waitFor();
+  await page.locator('.monaco-editor textarea').waitFor();
   await page.getByRole('combobox', { name: '언어' }).selectOption('en');
   return page;
 }
@@ -36,6 +40,7 @@ try {
     await page.getByRole('button', { name: 'New Normalized document' }).click();
     await page.locator('.monaco-editor').click({ position: { x: 130, y: 35 } });
     await page.keyboard.insertText('j\r\nv');
+    await page.waitForFunction(() => /rev [1-9]/.test(document.querySelector('.status-bar span:nth-child(2)')?.textContent ?? ''));
     const edited = await sourceRevision(page);
     assert.match(edited, /rev [1-9]/);
     await page.getByRole('tab', { name: 'Generated Raw' }).click();
@@ -69,7 +74,7 @@ try {
     await page.getByRole('button', { name: 'Address 3, p' }).click();
     await restoredAfterDocumentSwitch;
     assert.equal(await page.getByRole('textbox', { name: 'Alias' }).inputValue(), 'draft alias');
-    await page.getByRole('button', { name: 'Hide inspector' }).click();
+    await page.locator('.editor-tabs').getByRole('button', { name: 'Hide inspector' }).click();
     const restoredAfterInspectorSwitch = page.waitForFunction(() => document.querySelector('.notes-panel textarea')?.value === 'draft explanation');
     await page.getByRole('button', { name: 'Show inspector' }).click();
     await restoredAfterInspectorSwitch;
@@ -124,6 +129,28 @@ try {
     await page.getByText('Address bindings need review').waitFor();
   });
 
+  await scenario('invalid Unicode detaches runtime, notes, and address projections until removed', async page => {
+    await openExample(page);
+    await page.getByRole('button', { name: 'Address 3, p' }).click();
+    await page.getByRole('button', { name: 'Add selected address' }).click();
+    await page.getByRole('button', { name: 'Address 0, j' }).click();
+    await page.locator('.toolbar-actions').getByRole('button', { name: 'Run', exact: true }).click();
+    await page.getByText('BREAKPOINT', { exact: false }).first().waitFor();
+    await page.locator('.monaco-editor').click({ position: { x: 130, y: 35 } });
+    await page.keyboard.press('ControlOrMeta+Home');
+    await page.keyboard.insertText('\u00a0');
+    await page.getByText('Current source is invalid', { exact: false }).waitFor();
+    await page.locator('.execution-cell').waitFor({ state: 'detached' });
+    const breakpointButton = page.locator('.pane-block').filter({ has: page.getByRole('heading', { name: 'Breakpoints' }) }).getByRole('button');
+    assert.equal(await breakpointButton.isDisabled(), true);
+    assert.equal(await page.getByRole('textbox', { name: 'Alias' }).isDisabled(), true);
+    await page.keyboard.press('ControlOrMeta+z');
+    await page.getByText('Current source is invalid', { exact: false }).waitFor({ state: 'detached' });
+    await page.getByRole('button', { name: 'Address 0, j' }).click();
+    assert.equal(await breakpointButton.isEnabled(), true);
+    assert.equal(await page.getByRole('textbox', { name: 'Alias' }).isEnabled(), true);
+  });
+
   await scenario('compact toolbar keeps secondary actions scrollable', async page => {
     await page.setViewportSize({ width: 700, height: 650 });
     for (const label of ['Save As', 'Reverse', 'Restart', 'Stop']) {
@@ -133,8 +160,20 @@ try {
     assert.equal(await page.locator('.toolbar-actions').evaluate(element => element.scrollWidth > element.clientWidth), true);
   });
 
+  await scenario('minimum-width inspector overlay has an internal close path', async page => {
+    await page.setViewportSize({ width: 900, height: 700 });
+    await page.locator('.inspector-title').getByRole('button', { name: 'Hide inspector' }).click();
+    assert.equal(await page.locator('.inspector').count(), 0);
+    await page.locator('.editor-tabs').getByRole('button', { name: 'Show inspector' }).click();
+    await page.locator('.inspector-title').getByRole('button', { name: 'Hide inspector' }).waitFor();
+    assert.equal(await page.locator('.inspector').count(), 1);
+    await page.getByRole('button', { name: 'Learn', exact: true }).click();
+    await page.locator('.inspector-title').getByRole('button', { name: 'Hide inspector' }).click();
+    assert.equal(await page.locator('.inspector').count(), 0);
+  });
+
   assert.deepEqual(errors, []);
-  writeFileSync(new URL('../../evidence/current/ui-browser.json', import.meta.url), JSON.stringify({ status: 'PASS', results, errors }, null, 2));
+  writeFileSync(join(evidenceDir, 'ui-browser.json'), JSON.stringify({ status: 'PASS', results, errors }, null, 2));
   console.log(JSON.stringify({ status: 'PASS', results }));
 } finally {
   await browser.close();

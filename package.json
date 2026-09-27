@@ -13,6 +13,7 @@
     "tauri:dev": "npm run tauri:dev -w @bolgescope/desktop",
     "tauri:build": "npm run tauri:build -w @bolgescope/desktop",
     "test": "npm run test --workspaces --if-present",
+    "test:review-regressions": "npm run test -w @bolgescope/core -- test/source-relation.test.ts test/rewind-slices.test.ts && npm run test -w @bolgescope/runtime -- test/client-lifecycle.test.mjs test/runtime.test.mjs && npm run test -w @bolgescope/desktop -- src/operationOwner.test.ts src/notePersistence.test.ts src/sourceUiState.test.ts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "biome lint apps/desktop/src packages"
   },

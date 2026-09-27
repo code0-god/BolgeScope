@@ -1,5 +1,5 @@
 import { LoadError, loadProgram, MalbolgeMachine } from '@bolgescope/core';
-import type { MachineState, Program, SourceKind } from '@bolgescope/core';
+import type { MachineState, Program, ReverseSearchCursor, SourceKind, StopReason } from '@bolgescope/core';
 import type { MemoryRange, Request, Response, RuntimeValue, StateEvent, ViewBundle, ViewPage } from './protocol.js';
 import { buildTrace } from './trace.js';
 
@@ -18,6 +18,22 @@ const processing = new Map<string, { fingerprint: string; response: Promise<Resp
 let trace: { exportId: string; bytes: Uint8Array; digest: string; nextIndex: number } | null = null;
 let exporting = false;
 let exportGeneration = 0;
+const lifecycleCommands = new Set<Request['command']>(['load', 'restart', 'stop']);
+type HistoryJob = {
+  readonly generation: number;
+  readonly owner: MalbolgeMachine;
+  readonly sessionId: string;
+  kind: 'search' | 'restore';
+  cursor: ReverseSearchCursor | null;
+  target: number | null;
+  reason: StopReason;
+  lastEmit: number;
+  emittedProgress: boolean;
+  readonly resolve: (state: MachineState) => void;
+  readonly reject: (error: Error) => void;
+};
+let historyGeneration = 0;
+let historyJob: HistoryJob | null = null;
 
 function record(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 function integer(value: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): value is number { return typeof value === 'number' && Number.isSafeInteger(value) && value >= min && value <= max; }
@@ -48,32 +64,141 @@ function tick(): void {
     if (result.state.phase !== 'WAITING_INPUT') { intent = 'NONE'; runRemaining = 0; }
   }
 }
+function scheduleHistory(): void {
+  const generation = historyJob?.generation;
+  if (generation === undefined) return;
+  setTimeout(() => historyTick(generation), 0);
+}
+function finishHistory(job: HistoryJob, state: MachineState): void {
+  if (historyJob !== job) return;
+  historyJob = null;
+  job.resolve(state);
+}
+function cancelHistory(error?: Error, state?: MachineState): void {
+  const job = historyJob;
+  if (!job) return;
+  historyJob = null;
+  historyGeneration++;
+  if (error) job.reject(error);
+  else if (state) job.resolve(state);
+}
+function historyTick(generation: number): void {
+  const job = historyJob;
+  if (!job || job.generation !== generation || machine !== job.owner || sessionId !== job.sessionId) return;
+  try {
+    if (job.kind === 'search') {
+      const cursor = job.cursor;
+      if (!cursor) fail('INVALID_STATE', 'Reverse search cursor is unavailable');
+      const slice = job.owner.reverseSearchSlice(cursor, 256, 8);
+      job.cursor = slice.cursor;
+      if (slice.target) {
+        job.kind = 'restore';
+        job.target = slice.target.eventIndex;
+        job.reason = slice.target.reason;
+      }
+      const now = performance.now();
+      if (now - job.lastEmit >= 50) {
+        emit(job.owner.getState());
+        job.lastEmit = now;
+      }
+      scheduleHistory();
+      return;
+    }
+    if (job.target === null) fail('INVALID_STATE', 'Rewind target is unavailable');
+    const slice = job.owner.rewindSlice(job.target, 256, 8, job.reason);
+    if (slice.done) {
+      emit(slice.state);
+      finishHistory(job, slice.state);
+      return;
+    }
+    const now = performance.now();
+    if (!job.emittedProgress || now - job.lastEmit >= 50) {
+      emit(slice.state);
+      job.emittedProgress = true;
+      job.lastEmit = now;
+    }
+    scheduleHistory();
+  } catch (error) {
+    const state = job.owner.pause();
+    emit(state);
+    cancelHistory(error instanceof Error ? error : new Error('History operation failed'));
+  }
+}
+function startHistory(owner: MalbolgeMachine, kind: HistoryJob['kind'], target: number | null, reason: StopReason): Promise<MachineState> {
+  if (historyJob) return Promise.reject(new WorkerRequestError('BUSY', 'History operation is active'));
+  intent = 'NONE';
+  runRemaining = 0;
+  const state = owner.beginRewind();
+  emit(state);
+  return new Promise<MachineState>((resolve, reject) => {
+    historyJob = {
+      generation: ++historyGeneration,
+      owner,
+      sessionId: sessionId ?? '',
+      kind,
+      cursor: kind === 'search' ? { fromEventIndex: state.eventIndex, nextEventIndex: state.eventIndex } : null,
+      target,
+      reason,
+      lastEmit: performance.now(),
+      emittedProgress: false,
+      resolve,
+      reject,
+    };
+    scheduleHistory();
+  });
+}
 function traceChunk(index: number): RuntimeValue {
   if (!trace) return fail('EXPORT_CANCELLED', 'No active trace export');
   const start = index * 65536;
   const end = Math.min(start + 65536, trace.bytes.length);
   return { exportId: trace.exportId, chunkIndex: index, bytes: trace.bytes.slice(start, end), done: end >= trace.bytes.length, totalBytes: trace.bytes.length, digest: trace.digest };
 }
-async function command(request: Request): Promise<RuntimeValue> {
+
+// Lifecycle requests use strictly increasing epochs. Validation completes before
+// commit; a failed replacement leaves the prior machine, session, and epoch live.
+function lifecycleCommand(request: Request): RuntimeValue {
   const payload = request.payload;
   if (!record(payload)) return fail('INVALID_REQUEST', 'Payload must be an object');
-  if ((trace || exporting) && !['ackTraceExport', 'cancelTraceExport', 'getState', 'queryView', 'queryPoint', 'queryMemory', 'queryInitialMemory', 'getHistory', 'getOutput', 'pause', 'stop'].includes(request.command)) return fail('BUSY', 'Trace export is active');
   if (request.command === 'load') {
     const source = payload.source;
     const kind = payload.kind;
     if (!(typeof source === 'string' || source instanceof Uint8Array) || (kind !== 'raw' && kind !== 'normalized')) return fail('INVALID_REQUEST', 'Invalid source');
     const loaded = loadProgram(source, kind as SourceKind);
-    machine = new MalbolgeMachine(loaded);
+    const nextMachine = new MalbolgeMachine(loaded);
+    cancelHistory(new WorkerRequestError('OPERATION_CANCELLED', 'Session was replaced'));
+    machine = nextMachine;
     program = loaded;
     sessionId = crypto.randomUUID();
-    intent = 'NONE'; runRemaining = 0;
+  } else if (request.command === 'restart') {
+    if (!program || !machine) return fail('SESSION_MISMATCH', 'No source snapshot');
+    const nextMachine = new MalbolgeMachine(program);
+    cancelHistory(new WorkerRequestError('OPERATION_CANCELLED', 'Session was restarted'));
+    machine = nextMachine;
+    sessionId = crypto.randomUUID();
+  } else if (request.command === 'stop') {
+    if (!machine) return fail('SESSION_MISMATCH', 'No active session');
     const state = machine.getState();
-    queueMicrotask(() => emit(state));
+    cancelHistory(new WorkerRequestError('OPERATION_CANCELLED', 'Session was stopped'));
+    intent = 'NONE'; runRemaining = 0; exportGeneration++; exporting = false; trace = null;
+    machine = null; program = null; sessionId = null;
+    epoch = request.clientEpoch; lastSequence = request.requestSequence;
     return state;
-  }
+  } else return fail('INVALID_REQUEST', 'Unknown lifecycle command');
+  intent = 'NONE'; runRemaining = 0; exportGeneration++; exporting = false; trace = null;
+  epoch = request.clientEpoch; lastSequence = request.requestSequence;
+  const state = machine.getState();
+  queueMicrotask(() => emit(state));
+  return state;
+}
+
+async function command(request: Request): Promise<RuntimeValue> {
+  const payload = request.payload;
+  if (!record(payload)) return fail('INVALID_REQUEST', 'Payload must be an object');
+  if (historyJob && !['pause', 'getState', 'queryView', 'queryPoint', 'queryMemory', 'queryInitialMemory', 'getHistory', 'getOutput'].includes(request.command)) return fail('BUSY', 'History operation is active');
+  if ((trace || exporting) && !['ackTraceExport', 'cancelTraceExport', 'getState', 'queryView', 'queryPoint', 'queryMemory', 'queryInitialMemory', 'getHistory', 'getOutput', 'pause', 'stop'].includes(request.command)) return fail('BUSY', 'Trace export is active');
   const active = requireMachine(request);
   let state: MachineState;
-  if (active.getPhase() === 'RUNNING' && (request.command === 'run' || request.command === 'step' || request.command === 'stepBack' || request.command === 'reverseContinue' || request.command === 'rewindTo' || request.command === 'createBranch' || request.command === 'restart')) return fail('BUSY', 'Run is active; pause first');
+  if (active.getPhase() === 'RUNNING' && (request.command === 'run' || request.command === 'step' || request.command === 'stepBack' || request.command === 'reverseContinue' || request.command === 'rewindTo' || request.command === 'createBranch')) return fail('BUSY', 'Run is active; pause first');
   switch (request.command) {
     case 'run': {
       const budget = payload.budget === undefined ? 1_000_000 : payload.budget;
@@ -84,15 +209,10 @@ async function command(request: Request): Promise<RuntimeValue> {
       return state;
     }
     case 'step': intent = 'STEP'; state = active.step(); if (state.phase !== 'WAITING_INPUT') intent = 'NONE'; emit(state); return state;
-    case 'pause': intent = 'NONE'; runRemaining = 0; state = active.pause(); emit(state); return state;
+    case 'pause':
+      intent = 'NONE'; runRemaining = 0; state = active.pause(); cancelHistory(undefined, state); emit(state); return state;
     case 'stepBack': intent = 'NONE'; state = active.stepBack(); emit(state); return state;
-    case 'reverseContinue': intent = 'NONE'; state = active.reverseContinue(); emit(state); return state;
-    case 'restart': {
-      if (!program) return fail('SESSION_MISMATCH', 'No source snapshot');
-      machine = new MalbolgeMachine(program); sessionId = crypto.randomUUID(); intent = 'NONE'; runRemaining = 0;
-      state = machine.getState(); queueMicrotask(() => emit(state)); return state;
-    }
-    case 'stop': intent = 'NONE'; runRemaining = 0; exportGeneration++; exporting = false; trace = null; machine = null; program = null; return active.getState();
+    case 'reverseContinue': return startHistory(active, 'search', null, 'REWOUND');
     case 'appendInput': {
       const bytes = payload.bytes;
       if (!Array.isArray(bytes) || !bytes.every(byte => integer(byte, 0, 255)) || bytes.length > 1_048_576) return fail('INVALID_REQUEST', 'Invalid input bytes');
@@ -180,7 +300,7 @@ async function command(request: Request): Promise<RuntimeValue> {
     case 'rewindTo': {
       const eventIndex = payload.eventIndex;
       if (!integer(eventIndex)) return fail('INVALID_REQUEST', 'Invalid event index');
-      state = active.rewindTo(eventIndex); intent = 'NONE'; runRemaining = 0; emit(state); return state;
+      return startHistory(active, 'restore', eventIndex, 'REWOUND');
     }
     case 'createBranch': {
       const bytes = payload.bytes; const closed = payload.closed; const exportReceipt = payload.exportReceipt;
@@ -221,19 +341,23 @@ async function command(request: Request): Promise<RuntimeValue> {
 
 async function processRequest(request: Request): Promise<Response> {
   let result: Response['result'];
-  if (request.clientEpoch < epoch || (request.clientEpoch === epoch && request.requestSequence <= lastSequence)) result = { ok: false, code: 'REQUEST_EXPIRED', message: 'Old request sequence' };
-  else {
-    try { const value = await command(request); result = { ok: true, value }; }
+  const lifecycle = lifecycleCommands.has(request.command);
+  if (lifecycle ? request.clientEpoch <= epoch : request.clientEpoch !== epoch || request.requestSequence <= lastSequence) {
+    result = { ok: false, code: 'REQUEST_EXPIRED', message: 'Old request generation or sequence' };
+  } else {
+    if (!lifecycle) lastSequence = request.requestSequence;
+    try {
+      const value = lifecycle ? lifecycleCommand(request) : await command(request);
+      result = { ok: true, value };
+    }
     catch (error) {
       if (error instanceof WorkerRequestError) result = { ok: false, code: error.code, message: error.message };
       else if (error instanceof LoadError) result = { ok: false, code: error.diagnostics[0]?.code ?? 'LOAD_INVALID', message: error.message };
       else if (error instanceof Error) result = { ok: false, code: 'INVALID_STATE', message: error.message };
       else result = { ok: false, code: 'WORKER_ERROR', message: 'Unknown worker failure' };
     }
-    if (request.clientEpoch > epoch && result.ok && (request.command === 'load' || request.command === 'restart')) { epoch = request.clientEpoch; lastSequence = 0; }
-    if (request.clientEpoch === epoch) lastSequence = Math.max(lastSequence, request.requestSequence);
   }
-  return { protocolVersion: 1, clientEpoch: request.clientEpoch, requestId: request.requestId, sessionId, result };
+  return { protocolVersion: 1, clientEpoch: request.clientEpoch, committedEpoch: epoch, requestId: request.requestId, sessionId, result };
 }
 
 scope.onmessage = async (event: MessageEvent<unknown>) => {
@@ -241,7 +365,7 @@ scope.onmessage = async (event: MessageEvent<unknown>) => {
   if (!record(raw) || raw.protocolVersion !== 1 || !integer(raw.clientEpoch) || typeof raw.requestId !== 'string' || !integer(raw.requestSequence) || typeof raw.command !== 'string') return;
   const request = raw as Request;
   const fingerprint = JSON.stringify([request.clientEpoch, request.command, request.payload, request.sessionId, request.branchId]);
-  const invalid: Response = { protocolVersion: 1, clientEpoch: request.clientEpoch, requestId: request.requestId, sessionId, result: { ok: false, code: 'INVALID_REQUEST', message: 'Reused request ID' } };
+  const invalid: Response = { protocolVersion: 1, clientEpoch: request.clientEpoch, committedEpoch: epoch, requestId: request.requestId, sessionId, result: { ok: false, code: 'INVALID_REQUEST', message: 'Reused request ID' } };
   const prior = responses.get(request.requestId);
   if (prior) { scope.postMessage(prior.fingerprint === fingerprint ? prior.response : invalid); return; }
   const active = processing.get(request.requestId);

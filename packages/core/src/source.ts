@@ -6,12 +6,33 @@ export type SourceCell = Readonly<{ address: number; raw: number; symbol: string
 export type Diagnostic = Readonly<{ code: string; message: string; span?: Span; address?: number }>;
 export type Analysis = Readonly<{ kind: SourceKind; rawSource: Uint8Array; logicalSource: Uint8Array; sourceMap: readonly SourceCell[]; diagnostics: readonly Diagnostic[] }>;
 export type Program = Readonly<{ analysis: Analysis; initialMemory: Uint16Array; profile: Readonly<{ id: typeof PROFILE_ID; contractDigest: typeof PROFILE_DIGEST }> }>;
+export type SourceExecutionRelation = 'same-text' | 'same-image' | 'different' | 'invalid';
+export type SourceIdentity = Readonly<{
+  documentId: string;
+  text: string;
+  kind: SourceKind;
+  analysis: Analysis;
+  profile: Readonly<{ id: string; contractDigest: string }>;
+}>;
 
 export class LoadError extends Error {
   constructor(readonly diagnostics: readonly Diagnostic[]) { super(diagnostics[0]?.message ?? 'Invalid source'); this.name = 'LoadError'; }
 }
 
 function isSpace(byte: number): boolean { return byte === 32 || (byte >= 9 && byte <= 13); }
+function bytesEqual(left: Uint8Array, right: Uint8Array): boolean {
+  return left.length === right.length && left.every((byte, index) => byte === right[index]);
+}
+
+export function classifySourceRelation(current: SourceIdentity, executed: SourceIdentity): SourceExecutionRelation {
+  if (current.analysis.diagnostics.length || executed.analysis.diagnostics.length) return 'invalid';
+  if (current.documentId !== executed.documentId ||
+    current.kind !== executed.kind ||
+    current.profile.id !== executed.profile.id ||
+    current.profile.contractDigest !== executed.profile.contractDigest) return 'different';
+  if (current.text === executed.text) return 'same-text';
+  return bytesEqual(current.analysis.logicalSource, executed.analysis.logicalSource) ? 'same-image' : 'different';
+}
 
 export function analyzeSource(source: string | Uint8Array, kind: SourceKind = 'raw'): Analysis {
   const bytes = typeof source === 'string' ? new TextEncoder().encode(source) : source.slice();

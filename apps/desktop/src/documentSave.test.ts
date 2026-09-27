@@ -26,7 +26,7 @@ describe('document saving', () => {
 
   it('detaches Save As from the project so the next Save targets the new file', async () => {
     const adapter: SaveAdapter = {
-      saveAs: vi.fn(async () => ({ name: 'copy.mb', grantId: 'copy', diskRevision: 'copy-rev' })),
+      saveAs: vi.fn(async () => ({ name: 'copy.mb', grantId: 'copy', targetId: 'copy-target', diskRevision: 'copy-rev' })),
       saveFile: vi.fn(async () => 'next-rev'), saveProjectFile: vi.fn(),
     };
     const saved = await saveDocument(document, true, adapter);

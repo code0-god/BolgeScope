@@ -1,11 +1,14 @@
 import { MEMORY_SIZE } from './codec.js';
 import { ObservationCounters } from './counters.js';
-import { historicalPoint, matchesWatchpoint, reverseTarget } from './history.js';
+import { historicalPoint, matchesWatchpoint, reverseTarget, reverseTargetSlice } from './history.js';
+import type { ReverseSearchCursor, ReverseSearchSlice } from './history.js';
 import { appendJournal, canRecord } from './journal.js';
 import type { JournalDraft } from './journal.js';
 import { planStep } from './step.js';
 import type { Program } from './source.js';
 import type { JournalEvent, MachineHead, MachineState, Phase, PointView, RoleCounterPage, RoleCounts, StopReason, Transaction, Watchpoint } from './types.js';
+
+export type RewindSliceResult = Readonly<{ state: MachineState; moved: number; done: boolean }>;
 
 export class MalbolgeMachine {
   private readonly initial: Uint16Array;
@@ -64,6 +67,52 @@ export class MalbolgeMachine {
     const point = historicalPoint({ memory: this.memory, head: this.head, output: this.output, journal: this.journal, liveIndex: this.eventIndex, earliestIndex: this.earliestEventIndex }, eventIndex, start, count);
     return { ...point, roles: this.getRolePage(start, count, eventIndex) };
   }
+  beginRewind(): MachineState {
+    if (this.phase !== 'REWINDING') {
+      this.phase = 'REWINDING';
+      this.reason = 'NONE';
+      this.lastTransaction = null;
+      this.breakpointBypass = null;
+      this.stateVersion++;
+    }
+    return this.getState();
+  }
+  reverseSearchSlice(cursor: ReverseSearchCursor, maxEvents = 512, maxMilliseconds = 8): ReverseSearchSlice {
+    this.checkPoint(cursor.fromEventIndex);
+    if (!Number.isSafeInteger(cursor.nextEventIndex) || cursor.nextEventIndex < this.earliestEventIndex || cursor.nextEventIndex > cursor.fromEventIndex) throw new RangeError('HISTORY_EXPIRED');
+    return reverseTargetSlice(this.journal, cursor, this.earliestEventIndex, this.breakpoints, this.watchpoints, maxEvents, maxMilliseconds);
+  }
+  rewindSlice(eventIndex: number, maxEvents = 512, maxMilliseconds = 8, finalReason: StopReason = 'REWOUND'): RewindSliceResult {
+    this.checkPoint(eventIndex);
+    if (!Number.isSafeInteger(maxEvents) || maxEvents < 1 || !Number.isFinite(maxMilliseconds) || maxMilliseconds < 0) throw new RangeError('Invalid rewind slice');
+    this.beginRewind();
+    const started = performance.now();
+    let moved = 0;
+    while (this.eventIndex !== eventIndex && moved < maxEvents) {
+      if (this.eventIndex > eventIndex) {
+        const event = this.journal[this.eventIndex - this.earliestEventIndex - 1];
+        if (!event) throw new RangeError('HISTORY_EXPIRED');
+        this.undo(event);
+        this.eventIndex--;
+      } else {
+        const event = this.journal[this.eventIndex - this.earliestEventIndex];
+        if (!event) throw new RangeError('HISTORY_EXPIRED');
+        this.redo(event);
+        this.eventIndex++;
+      }
+      moved++;
+      if (performance.now() - started >= Math.min(maxMilliseconds, 8)) break;
+    }
+    const done = this.eventIndex === eventIndex;
+    if (done) this.finishRewind(finalReason);
+    else {
+      this.phase = 'REWINDING';
+      this.reason = 'NONE';
+      this.lastTransaction = null;
+      this.stateVersion++;
+    }
+    return { state: this.getState(), moved, done };
+  }
   rewindTo(eventIndex: number): MachineState {
     this.checkPoint(eventIndex);
     while (this.eventIndex > eventIndex) {
@@ -100,7 +149,18 @@ export class MalbolgeMachine {
     if (!Number.isSafeInteger(bytes) || bytes < this.head.outputLength || bytes > 16 * 1_048_576) throw new RangeError('Invalid output limit');
     this.outputLimit = bytes;
   }
-  pause(): MachineState { if (this.head.terminal === 'NONE') { this.phase = 'PAUSED'; this.reason = 'NONE'; this.breakpointBypass = null; this.stateVersion++; } return this.getState(); }
+  pause(): MachineState {
+    if (this.phase === 'REWINDING') {
+      this.phase = this.head.terminal === 'HALTED' ? 'HALTED' : this.head.terminal === 'FAULTED' ? 'FAULTED' : 'PAUSED';
+      this.reason = 'NONE';
+      this.lastTransaction = this.transactionAtCurrentPoint();
+      this.breakpointBypass = null;
+      this.stateVersion++;
+    } else if (this.head.terminal === 'NONE') {
+      this.phase = 'PAUSED'; this.reason = 'NONE'; this.breakpointBypass = null; this.stateVersion++;
+    }
+    return this.getState();
+  }
   beginRun(): MachineState {
     if (this.head.terminal === 'NONE') {
       // Capture the stopped breakpoint before the scheduler publishes RUNNING.
@@ -273,6 +333,14 @@ export class MalbolgeMachine {
       if (event && event.eventIndex <= this.eventIndex && event.kind === 'instruction') return event.transaction;
     }
     return null;
+  }
+
+  private finishRewind(reason: StopReason): void {
+    this.phase = this.head.terminal === 'HALTED' ? 'HALTED' : this.head.terminal === 'FAULTED' ? 'FAULTED' : 'PAUSED';
+    this.lastTransaction = this.transactionAtCurrentPoint();
+    this.reason = reason;
+    this.breakpointBypass = null;
+    this.stateVersion++;
   }
 
   private redoHost(event: JournalEvent): void {

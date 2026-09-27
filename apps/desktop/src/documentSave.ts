@@ -3,11 +3,11 @@ import type { SourceKind } from '@bolgescope/core';
 export type Document = {
   id: string; name: string; kind: SourceKind; text: string; revision: number; dirty: boolean;
   grantId: string | null; diskRevision: string | null; originalBytes: Uint8Array | null;
-  encodingError: boolean; recoveryId?: string; projectGrantId?: string; projectId?: string; relativePath?: string;
+  encodingError: boolean; recoveryId?: string; notesTargetId?: string; projectGrantId?: string; projectId?: string; relativePath?: string;
 };
 
 export type SaveAdapter = {
-  saveAs: (bytes: Uint8Array, name: string) => Promise<{ name: string; grantId: string; diskRevision: string } | null>;
+  saveAs: (bytes: Uint8Array, name: string) => Promise<{ name: string; grantId: string; targetId: string; diskRevision: string } | null>;
   saveFile: (grantId: string, bytes: Uint8Array, revision: string) => Promise<string>;
   saveProjectFile: (grantId: string, path: string, bytes: Uint8Array, revision: string | null) => Promise<string>;
 };
@@ -17,7 +17,7 @@ export async function saveDocument(document: Document, as: boolean, adapter: Sav
   if (as || (!document.projectGrantId && (!document.grantId || !document.diskRevision))) {
     const file = await adapter.saveAs(bytes, document.name);
     return file && { ...document, name: file.name, grantId: file.grantId, diskRevision: file.diskRevision,
-      originalBytes: bytes, dirty: false, projectGrantId: undefined, projectId: undefined, relativePath: undefined };
+      notesTargetId: file.targetId, originalBytes: bytes, dirty: false, projectGrantId: undefined, projectId: undefined, relativePath: undefined };
   }
   if (document.projectGrantId && document.relativePath) {
     const diskRevision = await adapter.saveProjectFile(document.projectGrantId, document.relativePath, bytes, document.diskRevision);
@@ -30,6 +30,7 @@ export async function saveDocument(document: Document, as: boolean, adapter: Sav
 
 export function mergeSavedDocument(current: Document, captured: Document, saved: Document): Document {
   return { ...current, name: saved.name, grantId: saved.grantId, diskRevision: saved.diskRevision,
+    notesTargetId: saved.notesTargetId,
     originalBytes: current.revision === captured.revision ? saved.originalBytes : null,
     dirty: current.revision !== captured.revision, projectGrantId: saved.projectGrantId,
     projectId: saved.projectId, relativePath: saved.relativePath,

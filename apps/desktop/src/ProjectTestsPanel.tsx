@@ -7,10 +7,10 @@ import { createTestWorkerClient } from '@bolgescope/runtime';
 import type { TestWorkerClient, TraceChunk } from '@bolgescope/runtime';
 import { nativeAvailable, nativeError } from './native';
 
-type GrantedFile = Readonly<{ grantId: string; name: string; bytes: number[]; diskRevision: string }>;
-type ProjectGrant = Readonly<{ grantId: string; name: string }>;
+type GrantedFile = Readonly<{ grantId: string; targetId: string; name: string; bytes: number[]; diskRevision: string }>;
+type ProjectGrant = Readonly<{ grantId: string; targetId: string; name: string }>;
 type SavedFile = Readonly<{ diskRevision: string }>;
-type ProjectSource = Readonly<{ name: string; kind: SourceKind; bytes: Uint8Array; projectId: string; projectGrantId: string; relativePath: string; diskRevision: string }>;
+type ProjectSource = Readonly<{ name: string; kind: SourceKind; bytes: Uint8Array; projectId: string; projectGrantId: string; projectTargetId: string; relativePath: string; diskRevision: string }>;
 type Props = Readonly<{
   sourceText: string;
   sourceBytes: Uint8Array;
@@ -80,7 +80,7 @@ export default function ProjectTestsPanel(props: Props) {
         const parsed = requireExecutableProject(parseProjectFile(Uint8Array.from(file.bytes)));
         const source = await readProjectFile(selected.grantId, parsed.source.path);
         setProject(parsed);
-        props.onOpenProjectSource({ name: parsed.source.path.split('/').pop() ?? 'program.mb', kind: parsed.source.kind, bytes: Uint8Array.from(source.bytes), projectId: parsed.projectId, projectGrantId: selected.grantId, relativePath: parsed.source.path, diskRevision: source.diskRevision });
+        props.onOpenProjectSource({ name: parsed.source.path.split('/').pop() ?? 'program.mb', kind: parsed.source.kind, bytes: Uint8Array.from(source.bytes), projectId: parsed.projectId, projectGrantId: selected.grantId, projectTargetId: selected.targetId, relativePath: parsed.source.path, diskRevision: source.diskRevision });
         setNotice(t('프로젝트 원문을 열었습니다.', 'Project source opened.'));
       } catch (error) {
         if (nativeError(error).code === 'NOT_FOUND') setNotice(t('새 폴더입니다. 현재 문서로 프로젝트를 만들 수 있습니다.', 'New folder. Create a project from the current document.'));
@@ -102,7 +102,7 @@ export default function ProjectTestsPanel(props: Props) {
       await saveProjectFile(grant.grantId, 'project.bolgeproj.json', encoder.encode(`${JSON.stringify(config, null, 2)}\n`), null);
       const parsed = requireExecutableProject(parseProjectFile(encoder.encode(JSON.stringify(config))));
       setProject(parsed);
-      props.onOpenProjectSource({ name: path.split('/').pop() ?? props.sourceName, kind: props.sourceKind, bytes: props.sourceBytes, projectId: parsed.projectId, projectGrantId: grant.grantId, relativePath: path, diskRevision: source.diskRevision });
+      props.onOpenProjectSource({ name: path.split('/').pop() ?? props.sourceName, kind: props.sourceKind, bytes: props.sourceBytes, projectId: parsed.projectId, projectGrantId: grant.grantId, projectTargetId: grant.targetId, relativePath: path, diskRevision: source.diskRevision });
       setNotice(t('프로젝트를 만들었습니다.', 'Project created.'));
     } catch (error) { setNotice(`${t('일부 파일이 저장되었을 수 있습니다. 내용을 확인하세요.', 'Some files may have been saved. Check the folder.')} ${message(error)}`); }
   }
