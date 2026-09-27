@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-check-external-revision"
+description = "Enables the check_external_revision command without any pre-configured scope."
+commands.allow = ["check_external_revision"]
+
+[[permission]]
+identifier = "deny-check-external-revision"
+description = "Denies the check_external_revision command without any pre-configured scope."
+commands.deny = ["check_external_revision"]

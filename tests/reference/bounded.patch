@@ -1,0 +1,11 @@
+--- malbolge.instrumented.c
++++ malbolge.bounded.c
+@@ -141,7 +141,7 @@
+   sup_dump("BOLGE_SUPERVISOR_INITIAL", mem);
+   for (;;)
+   {
+-    if (sup_steps >= 50000) { sup_finish(mem,"BUDGET"); return; }
++    if (sup_steps >= 1000) { sup_finish(mem,"BUDGET"); return; }
+     if ( mem[c] < 33 || mem[c] > 126 ) { sup_finish(mem,"STALLED_INVALID_FETCH"); return; }
+     sup_order = 0;
+     fprintf(sup_trace, "{\"kind\":\"before\",\"step\":%lu,\"a\":%u,\"c\":%u,\"d\":%u,\"raw\":%u,\"decoded\":%u}\n",sup_steps,a,c,d,mem[c],(unsigned char)xlat1[(mem[c]-33+c)%94]);

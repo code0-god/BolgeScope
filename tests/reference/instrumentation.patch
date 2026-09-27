@@ -1,0 +1,100 @@
+--- malbolge.original.c
++++ malbolge.instrumented.c
+@@ -22,7 +22,6 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+-#include <malloc.h>
+ #include <string.h>
+ 
+ #ifdef __GNUC__
+@@ -42,6 +41,35 @@
+ const char xlat2[] =
+   "5z]&gqtyfr$(we4{WP)H-Zn,[%\\3dL+Q;>U!pJS72FhOA1C"
+   "B6v^=I_0/8|jsb9m<.TVac`uY*MK'X~xDl}REokN:#?G\"i@";
++
++
++/* Supervisor-only instrumentation; not included in the product. */
++static FILE *sup_trace;
++static unsigned long sup_steps;
++static unsigned sup_order;
++static void sup_dump(const char *envkey, unsigned short *mem) {
++  const char *path = getenv(envkey);
++  if (path) {
++    FILE *f = fopen(path, "wb");
++    if (!f || fwrite(mem, sizeof(unsigned short), 59049, f) != 59049) exit(72);
++    fclose(f);
++  }
++}
++static unsigned short sup_read(unsigned short *mem, unsigned short address) {
++  fprintf(sup_trace, "{\"kind\":\"read\",\"role\":\"data-read\",\"order\":%u,\"address\":%u,\"value\":%u}\n", sup_order++, address, mem[address]);
++  return mem[address];
++}
++static void sup_write(const char *role, unsigned short address, unsigned short before, unsigned short after) {
++  fprintf(sup_trace, "{\"kind\":\"write\",\"role\":\"%s\",\"order\":%u,\"address\":%u,\"before\":%u,\"after\":%u}\n", role, sup_order++, address, before, after);
++}
++static void sup_end(unsigned short a, unsigned short c, unsigned short d, int halted) {
++  fprintf(sup_trace, "{\"kind\":\"after\",\"step\":%lu,\"a\":%u,\"c\":%u,\"d\":%u,\"halted\":%s}\n", ++sup_steps, a,c,d,halted ? "true" : "false");
++}
++static void sup_finish(unsigned short *mem, const char *status) {
++  fprintf(sup_trace, "{\"kind\":\"terminal\",\"status\":\"%s\",\"step\":%lu}\n", status,sup_steps);
++  sup_dump("BOLGE_SUPERVISOR_FINAL", mem);
++  fclose(sup_trace);
++}
+ 
+ int main( int argc, char **argv )
+ {
+@@ -106,20 +134,30 @@
+ {
+   unsigned short a = 0, c = 0, d = 0;
+   int x;
++  const char *trace_path = getenv("BOLGE_SUPERVISOR_TRACE");
++  if (!trace_path || !(sup_trace = fopen(trace_path, "wb"))) exit(71);
++  sup_steps = 0;
++  fprintf(sup_trace, "{\"kind\":\"tables\",\"xlat1Size\":%zu,\"xlat2Size\":%zu,\"xlat2_94\":%u,\"wordSize\":%zu}\n", sizeof(xlat1),sizeof(xlat2),(unsigned char)xlat2[94],sizeof(unsigned short));
++  sup_dump("BOLGE_SUPERVISOR_INITIAL", mem);
+   for (;;)
+   {
+-    if ( mem[c] < 33 || mem[c] > 126 ) continue;
++    if (sup_steps >= 50000) { sup_finish(mem,"BUDGET"); return; }
++    if ( mem[c] < 33 || mem[c] > 126 ) { sup_finish(mem,"STALLED_INVALID_FETCH"); return; }
++    sup_order = 0;
++    fprintf(sup_trace, "{\"kind\":\"before\",\"step\":%lu,\"a\":%u,\"c\":%u,\"d\":%u,\"raw\":%u,\"decoded\":%u}\n",sup_steps,a,c,d,mem[c],(unsigned char)xlat1[(mem[c]-33+c)%94]);
++    fprintf(sup_trace, "{\"kind\":\"read\",\"role\":\"fetch\",\"order\":%u,\"address\":%u,\"value\":%u}\n", sup_order++,c,mem[c]);
+     switch ( xlat1[( mem[c] - 33 + c ) % 94] )
+     {
+-      case 'j': d = mem[d]; break;
+-      case 'i': c = mem[d]; break;
+-      case '*': a = mem[d] = mem[d] / 3 + mem[d] % 3 * 19683; break;
+-      case 'p': a = mem[d] = op( a, mem[d] ); break;
++      case 'j': d = sup_read(mem,d); break;
++      case 'i': c = sup_read(mem,d); break;
++      case '*': { unsigned short old = sup_read(mem,d); a = mem[d] = old / 3 + old % 3 * 19683; sup_write("data-write",d,old,mem[d]); break; }
++      case 'p': { unsigned short old = sup_read(mem,d); a = mem[d] = op(a,old); sup_write("data-write",d,old,mem[d]); break; }
+       case '<':
+ #if '\n' != 10
+         if ( x == 10 ) putc( '\n', stdout ); else
+ #endif
+         putc( a, stdout );
++        fprintf(sup_trace, "{\"kind\":\"output\",\"byte\":%u}\n", (unsigned char)a);
+         break;
+       case '/':
+         x = getc( stdin );
+@@ -127,12 +165,15 @@
+         if ( x == '\n' ) a = 10; else
+ #endif
+         if ( x == EOF ) a = 59048; else a = x;
++        fprintf(sup_trace, "{\"kind\":\"input\",\"value\":%d,\"eof\":%s}\n",x,x==EOF ? "true":"false");
+         break;
+-      case 'v': return;
++      case 'v': sup_end(a,c,d,1); sup_finish(mem,"HALTED"); return;
+     }
+-    mem[c] = xlat2[mem[c] - 33];
++    if (mem[c] < 33 || mem[c] > 127) { sup_finish(mem,"REFERENCE_UNDEFINED"); return; }
++    { unsigned short old = mem[c]; mem[c] = xlat2[mem[c] - 33]; sup_write("encryption",c,old,mem[c]); }
+     if ( c == 59048 ) c = 0; else c++;
+     if ( d == 59048 ) d = 0; else d++;
++    sup_end(a,c,d,0);
+   }
+ }
+ 

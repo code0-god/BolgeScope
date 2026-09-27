@@ -1,0 +1,10 @@
+--- malbolge.original.c
++++ malbolge.portable.c
+@@ -22,7 +22,6 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <ctype.h>
+-#include <malloc.h>
+ #include <string.h>
+ 
+ #ifdef __GNUC__

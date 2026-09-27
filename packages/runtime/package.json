@@ -1,0 +1,8 @@
+{
+  "name": "@bolgescope/runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@bolgescope/core": "0.1.0", "@bolgescope/contracts": "0.1.0" },
+  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" }
+}

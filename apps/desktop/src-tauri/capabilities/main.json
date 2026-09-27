@@ -1,0 +1,7 @@
+{
+  "$schema": "https://schema.tauri.app/capability/2",
+  "identifier": "main",
+  "description": "Local BolgeScope window; all file access is mediated by native commands.",
+  "windows": ["main"],
+  "permissions": ["core:default", "core:window:allow-close", "main-commands"]
+}

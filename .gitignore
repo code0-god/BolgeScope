@@ -1,0 +1,27 @@
+node_modules/
+dist/
+target/
+*.log
+.DS_Store
+apps/desktop/src-tauri/gen/
+
+# Local agent and workflow state
+.codegraph
+.debug-journal.md
+.implementation/
+.omo/
+.omx/
+
+# Generated release and validation artifacts
+release/
+__pycache__/
+*.py[cod]
+evidence/current/tmp/
+evidence/current/native-hardening-last.md
+evidence/supervisor/REVIEW.md
+evidence/supervisor/malbolge.bounded
+evidence/supervisor/malbolge.instrumented
+evidence/supervisor/malbolge.portable
+evidence/supervisor/native-save-*/
+evidence/**/failure.png
+evidence/**/*-failure.png

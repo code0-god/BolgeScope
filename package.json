@@ -1,0 +1,27 @@
+{
+  "name": "bolgescope",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @bolgescope/desktop",
+    "build": "npm run build -w @bolgescope/desktop",
+    "tauri:dev": "npm run tauri:dev -w @bolgescope/desktop",
+    "tauri:build": "npm run tauri:build -w @bolgescope/desktop",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "biome lint apps/desktop/src packages"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@tauri-apps/cli": "2.11.5",
+    "@types/node": "26.6.3",
+    "playwright": "1.63.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.2"
+  }
+}

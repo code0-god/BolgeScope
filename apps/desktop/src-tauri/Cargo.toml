@@ -1,0 +1,26 @@
+[package]
+name = "bolgescope-desktop"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[lib]
+name = "bolgescope_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+default = []
+e2e-webdriver = ["dep:tauri-plugin-wdio-webdriver"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+# Acceptance automation is explicitly opt-in, never part of production defaults.
+tauri-plugin-wdio-webdriver = { version = "=1.4.0", optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+uuid = { version = "1", features = ["v4"] }

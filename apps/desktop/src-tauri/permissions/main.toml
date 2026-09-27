@@ -1,0 +1,21 @@
+[[set]]
+identifier = "main-commands"
+description = "BolgeScope native commands for the main window"
+permissions = [
+  "allow-select-file",
+  "allow-select-project",
+  "allow-read-granted-file",
+  "allow-check-external-revision",
+  "allow-save-granted-file",
+  "allow-save-as",
+  "allow-read-project-file",
+  "allow-save-project-file",
+  "allow-write-recovery",
+  "allow-list-recovery",
+  "allow-remove-recovery",
+  "allow-export-trace",
+  "allow-read-notes",
+  "allow-write-notes",
+  "allow-remove-notes",
+  "allow-finish-quit",
+]

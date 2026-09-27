@@ -1,0 +1,14 @@
+{
+  "id": "bolgescope-tio-safe-v1",
+  "legacyRelationship": "Derived from defined paths of TryItOnline original Malbolge C; full identity with tio-c-safe-v1 is unverified.",
+  "memoryCells": 59049,
+  "wordRange": [0, 59048],
+  "initialInstructions": "eight decoded opcodes at graphical ASCII cells after ASCII SP/TAB/LF/CR/VT/FF removal",
+  "loader": "strict ASCII; reject BOM, NUL, DEL, non-ASCII, invalid initial opcode, fewer than two or more than 59049 cells",
+  "execution": "10-trit crazy, ordered staged writes, post-operation C encryption, C/D increment except Halt, EOF word 59048",
+  "invalidFetch": "STALLED_INVALID_FETCH without machine effects",
+  "unsafeEncryption": "REFERENCE_UNDEFINED with full machine/input/output rollback",
+  "encryption127": "C xlat2 terminating NUL maps 127 to zero",
+  "inputWait": "empty open input creates no instruction or machine effects",
+  "journal": "input append/close and instructions are distinct reversible events"
+}

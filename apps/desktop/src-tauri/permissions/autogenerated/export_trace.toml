@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-export-trace"
+description = "Enables the export_trace command without any pre-configured scope."
+commands.allow = ["export_trace"]
+
+[[permission]]
+identifier = "deny-export-trace"
+description = "Denies the export_trace command without any pre-configured scope."
+commands.deny = ["export_trace"]
