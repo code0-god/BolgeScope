@@ -1,0 +1,56 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-09-27T08:59:12.738Z",
+  "kind": "supervisor-debugger-contracts",
+  "passed": 11,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "read-only-history-does-not-mutate-live",
+      "status": "PASS"
+    },
+    {
+      "name": "every-point-can-be-inspected-without-changing-live",
+      "status": "PASS"
+    },
+    {
+      "name": "rewind-updates-step-inspector-to-the-same-point",
+      "status": "PASS"
+    },
+    {
+      "name": "breakpoint-wait-and-revisit-bypass",
+      "status": "PASS"
+    },
+    {
+      "name": "input-breakpoint-continues-after-empty-wait",
+      "status": "PASS"
+    },
+    {
+      "name": "data-read-write-encryption-watchpoints-separated",
+      "status": "PASS"
+    },
+    {
+      "name": "same-cell-ordered-watchpoint-sees-final-atomic-value",
+      "status": "PASS"
+    },
+    {
+      "name": "output-limit-requires-cap-increase-before-resume",
+      "status": "PASS"
+    },
+    {
+      "name": "retention-earliest-query-and-undo-consistent",
+      "status": "PASS"
+    },
+    {
+      "name": "branch-new-suffix-preserves-consumed-prefix-and-memory",
+      "status": "PASS",
+      "detail": {
+        "receipt": "This isolated core test does not validate native export receipts"
+      }
+    },
+    {
+      "name": "getState-and-history-do-not-expose-mutable-vm-data",
+      "status": "PASS"
+    }
+  ]
+}

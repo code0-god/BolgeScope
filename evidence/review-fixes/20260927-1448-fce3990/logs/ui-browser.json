@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "name": "source, normalized, snapshot and CRLF model changes keep source revision",
+      "status": "PASS"
+    },
+    {
+      "name": "EOF closes input and disables Send",
+      "status": "PASS"
+    },
+    {
+      "name": "note draft survives document, inspector and Learn switches without changing source",
+      "status": "PASS"
+    },
+    {
+      "name": "latest Timeline event is a read-only historical point",
+      "status": "PASS"
+    },
+    {
+      "name": "Continue passes the current breakpoint once",
+      "status": "PASS"
+    },
+    {
+      "name": "whitespace keeps address bindings; changed cells request review",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid Unicode detaches runtime, notes, and address projections until removed",
+      "status": "PASS"
+    },
+    {
+      "name": "compact toolbar keeps secondary actions scrollable",
+      "status": "PASS"
+    },
+    {
+      "name": "minimum-width inspector overlay has an internal close path",
+      "status": "PASS"
+    }
+  ],
+  "errors": []
+}

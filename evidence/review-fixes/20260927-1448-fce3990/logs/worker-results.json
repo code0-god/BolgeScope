@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-09-27T08:59:14.895Z",
+  "kind": "actual-worker-node-task-queue-integration (not WKWebView)",
+  "passed": 9,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "step-wait-then-send-executes-only-one",
+      "status": "PASS"
+    },
+    {
+      "name": "run-wait-then-send-resumes",
+      "status": "PASS"
+    },
+    {
+      "name": "pause-cancels-waiting-run-intent",
+      "status": "PASS"
+    },
+    {
+      "name": "empty-closed-input-is-eof-not-halt",
+      "status": "PASS"
+    },
+    {
+      "name": "core-regression-through-real-worker",
+      "status": "PASS"
+    },
+    {
+      "name": "failed-load-keeps-previous-session-usable",
+      "status": "PASS"
+    },
+    {
+      "name": "restart-then-old-replies-cannot-replace-new-session",
+      "status": "PASS"
+    },
+    {
+      "name": "stop-invalidates-current-client-view",
+      "status": "PASS"
+    },
+    {
+      "name": "epoch-change-rejects-pending-old-requests",
+      "status": "PASS"
+    }
+  ]
+}

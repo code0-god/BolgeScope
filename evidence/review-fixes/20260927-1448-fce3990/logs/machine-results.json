@@ -1,0 +1,139 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-09-27T08:59:11.675Z",
+  "kind": "supervisor-independent-machine",
+  "referenceCases": 14,
+  "comparedInstructions": 218,
+  "passed": 18,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "reference-abc-lf",
+      "status": "PASS",
+      "detail": {
+        "instructions": 24,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-zeros",
+      "status": "PASS",
+      "detail": {
+        "instructions": 24,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-last-one",
+      "status": "PASS",
+      "detail": {
+        "instructions": 24,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-alternating",
+      "status": "PASS",
+      "detail": {
+        "instructions": 24,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-high-bytes",
+      "status": "PASS",
+      "detail": {
+        "instructions": 24,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-closed-empty",
+      "status": "PASS",
+      "detail": {
+        "instructions": 24,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-single-byte-echo",
+      "status": "PASS",
+      "detail": {
+        "instructions": 3,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-zero-byte-output",
+      "status": "PASS",
+      "detail": {
+        "instructions": 2,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-movd-post-increment",
+      "status": "PASS",
+      "detail": {
+        "instructions": 2,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-jump-encrypt-target",
+      "status": "PASS",
+      "detail": {
+        "instructions": 2,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-ordered-same-cell-writes",
+      "status": "PASS",
+      "detail": {
+        "instructions": 36,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-unsafe-rotate-rollback-boundary",
+      "status": "PASS",
+      "detail": {
+        "instructions": 0,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-invalid-generated-fetch",
+      "status": "PASS",
+      "detail": {
+        "instructions": 2,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "reference-actual-revisit",
+      "status": "PASS",
+      "detail": {
+        "instructions": 27,
+        "initialization": "reference-image (loader tested separately)"
+      }
+    },
+    {
+      "name": "stepBack-without-instruction-is-no-op",
+      "status": "PASS"
+    },
+    {
+      "name": "closed-tape-cannot-read-invisible-future-byte",
+      "status": "PASS"
+    },
+    {
+      "name": "input-wait-repeated-is-machine-invariant",
+      "status": "PASS"
+    },
+    {
+      "name": "max-sized-input-append-does-not-exhaust-call-stack",
+      "status": "PASS"
+    }
+  ]
+}

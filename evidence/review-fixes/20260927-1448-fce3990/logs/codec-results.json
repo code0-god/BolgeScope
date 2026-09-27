@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "kind": "independent-supervisor-codec",
+  "checks": {
+    "decodePairs": 8836,
+    "encodePairs": 472392,
+    "encryptionCases": 102,
+    "crazyPairs": 4258,
+    "rotationRoundTrips": 59049
+  },
+  "reference": "original C xlat strings and independent 3x3 trit arithmetic",
+  "productFile": "packages/core/src/codec.ts",
+  "timestamp": "2026-09-27T08:59:09.610Z"
+}

@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260927-1448-fce3990",
+  "recordedAt": "2026-09-27T11:30:21Z",
+  "baselineCommit": "fce3990bc242a343b4c73cab83424637520126c5",
+  "headCommit": "fce3990bc242a343b4c73cab83424637520126c5",
+  "implementationCommit": "c485560086fa9efc26a6c9576f5a41b0c7da2c7c",
+  "workingTree": "dirty-uncommitted",
+  "overallStatus": "PASS",
+  "changeSet": {
+    "trackedCodeTestDiffSha256": "32bc003b8a4db2d7628ee2d7b9296329c12a8cc8777af270b8bf69eb05f6c66e",
+    "untrackedProductTestManifestSha256": "f21005785d6b11ec8918e3b74bfcb89411f9ed9cccd9ff23796ca3868bfb21ec",
+    "excludes": [
+      "evidence outputs",
+      "release outputs"
+    ]
+  },
+  "repairs": [
+    {
+      "id": "F1",
+      "name": "RuntimeClient generation ownership",
+      "status": "PASS",
+      "implementation": [
+        "packages/runtime/src/client.ts",
+        "packages/runtime/src/worker.ts",
+        "apps/desktop/src/useRuntime.ts",
+        "apps/desktop/src/operationOwner.ts"
+      ],
+      "tests": [
+        "packages/runtime/test/client-lifecycle.test.mjs",
+        "packages/runtime/test/runtime.test.mjs",
+        "apps/desktop/src/operationOwner.test.ts"
+      ],
+      "evidence": [
+        "logs/worker-results.json",
+        "logs/ui-browser.json"
+      ]
+    },
+    {
+      "id": "F2",
+      "name": "note revision persistence",
+      "status": "PASS",
+      "implementation": [
+        "apps/desktop/src/notePersistence.ts",
+        "apps/desktop/src/NotesPanel.tsx",
+        "apps/desktop/src/documentSave.ts"
+      ],
+      "tests": [
+        "apps/desktop/src/notePersistence.test.ts",
+        "apps/desktop/src/documentSave.test.ts"
+      ],
+      "evidence": [
+        "logs/ui-browser.json"
+      ]
+    },
+    {
+      "id": "F3",
+      "name": "source and runtime identity",
+      "status": "PASS",
+      "implementation": [
+        "packages/core/src/source.ts",
+        "apps/desktop/src/sourceUiState.ts",
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/SourceEditor.tsx"
+      ],
+      "tests": [
+        "packages/core/test/source-relation.test.ts",
+        "apps/desktop/src/sourceUiState.test.ts"
+      ],
+      "evidence": [
+        "logs/source-results.json",
+        "logs/ui-browser.json"
+      ]
+    },
+    {
+      "id": "F4",
+      "name": "cancellable reverse execution",
+      "status": "PASS",
+      "implementation": [
+        "packages/core/src/history.ts",
+        "packages/core/src/machine.ts",
+        "packages/runtime/src/worker.ts",
+        "apps/desktop/src/useRuntime.ts"
+      ],
+      "tests": [
+        "packages/core/test/rewind-slices.test.ts",
+        "packages/runtime/test/runtime.test.mjs"
+      ],
+      "evidence": [
+        "logs/machine-results.json",
+        "logs/debugger-results.json",
+        "logs/worker-results.json"
+      ]
+    },
+    {
+      "id": "V1",
+      "name": "native staged diagnostics",
+      "status": "PASS",
+      "implementation": [
+        "apps/desktop/src-tauri/src/lib.rs",
+        "apps/desktop/src/native.ts",
+        "tests/e2e/native-acceptance.py"
+      ],
+      "evidence": [
+        "native/results.json",
+        "native.md"
+      ]
+    }
+  ],
+  "gateRemediation": {
+    "firstReview": "REJECT",
+    "firstReviewReport": ".omo/evidence/review-fixes-20260927-1448-fce3990-gate-review.md",
+    "finalReview": "APPROVE",
+    "finalReviewConfidence": "HIGH",
+    "finalReviewTask": "st_01a0e2a4",
+    "finalReviewReport": "final-gate.md",
+    "blockers": [
+      {
+        "id": "B1",
+        "name": "remounted note draft reused an older numeric revision identity",
+        "status": "PASS",
+        "fix": "persisted unique revisionToken",
+        "regression": "keeps a remounted draft when an older matching numeric revision settles"
+      },
+      {
+        "id": "B2",
+        "name": "RuntimeClient dropped equal-version WAITING_INPUT transition",
+        "status": "PASS",
+        "fix": "deduplicate equal-version states only when phase and reason also match",
+        "regression": "publishes an input-wait transition even when no instruction version changes"
+      }
+    ]
+  },
+  "verification": {
+    "typecheck": {
+      "status": "PASS",
+      "workspaces": [
+        "desktop",
+        "contracts",
+        "core",
+        "lessons",
+        "runtime"
+      ]
+    },
+    "fullTests": {
+      "status": "PASS",
+      "files": 16,
+      "tests": 93
+    },
+    "focusedReviewRegressions": {
+      "status": "PASS",
+      "files": 7,
+      "tests": 47
+    },
+    "lint": {
+      "status": "PASS",
+      "files": 61
+    },
+    "build": {
+      "status": "PASS",
+      "kind": "Vite production build",
+      "advisories": [
+        "main minified chunk exceeds 500 kB"
+      ]
+    },
+    "lspDiagnostics": {
+      "status": "PASS",
+      "errors": 0
+    },
+    "rust": {
+      "status": "PASS",
+      "tests": 13,
+      "fmt": "PASS",
+      "clippyWarnings": 0,
+      "acceptanceFeatureCompile": "PASS"
+    },
+    "independentOracles": {
+      "codec": {
+        "status": "PASS",
+        "evidence": "logs/codec-results.json"
+      },
+      "source": {
+        "status": "PASS",
+        "passed": 16,
+        "failed": 0,
+        "evidence": "logs/source-results.json"
+      },
+      "machine": {
+        "status": "PASS",
+        "passed": 18,
+        "failed": 0,
+        "referenceCases": 14,
+        "comparedInstructions": 218,
+        "evidence": "logs/machine-results.json"
+      },
+      "debugger": {
+        "status": "PASS",
+        "passed": 11,
+        "failed": 0,
+        "evidence": "logs/debugger-results.json"
+      },
+      "worker": {
+        "status": "PASS",
+        "passed": 9,
+        "failed": 0,
+        "evidence": "logs/worker-results.json"
+      }
+    },
+    "browser": {
+      "status": "PASS",
+      "scenarios": 9,
+      "evidence": "logs/ui-browser.json"
+    },
+    "visualQa": {
+      "status": "PASS",
+      "reviewers": 2,
+      "confidence": "HIGH"
+    }
+  },
+  "nativeAcceptance": {
+    "status": "BLOCKED",
+    "executableSha256": "768a3cca2ee551df5332a8ef9b0c0fec1832eaa726fc56077c8bd91d0d33e9ef",
+    "checks": [
+      {
+        "name": "actual-WKWebView-offline-assets-and-Monaco",
+        "status": "PASS"
+      },
+      {
+        "name": "real-native-open-cancel-preserves-document",
+        "status": "PASS"
+      },
+      {
+        "name": "native-dialog-and-disk-flow",
+        "status": "BLOCKED",
+        "reason": "System Events reached the real picker and proved cancel, but Accessibility path entry could not be driven reliably for the remaining fixture-open/save flow"
+      }
+    ],
+    "evidence": "native/results.json"
+  },
+  "release": {
+    "status": "PASS",
+    "kind": "local-development-preview",
+    "architecture": "arm64",
+    "signing": "ad-hoc",
+    "notarization": "NOT_RUN",
+    "otherMac": "NOT_RUN",
+    "gatekeeperPublicDistribution": "NOT_RUN",
+    "uninstrumentedLaunch": "PASS",
+    "testFeatureMarkers": "ABSENT",
+    "artifacts": [
+      {
+        "kind": "executable",
+        "path": "release/0.1.0-20260927-202823/BolgeScope.app/Contents/MacOS/bolgescope-desktop",
+        "bytes": 10310752,
+        "sha256": "e5ce0d160017140a0f9f496ff174741731070fcce6e6a688685d582b9520764e",
+        "status": "PASS"
+      },
+      {
+        "kind": "zip",
+        "path": "release/0.1.0-20260927-202823/BolgeScope-0.1.0-arm64.zip",
+        "bytes": 4002116,
+        "sha256": "b9ccbf9abf34f8b266cefd732f840da254d73aeedcad5e183730a1aede7c488b",
+        "status": "PASS"
+      },
+      {
+        "kind": "dmg",
+        "path": "release/0.1.0-20260927-202823/BolgeScope-0.1.0-arm64.dmg",
+        "bytes": 4395315,
+        "sha256": "4b1cb0270374ea4c940aeffd095ef046436095b736be03bbeef232d95471edb5",
+        "status": "PASS"
+      }
+    ],
+    "evidence": [
+      "artifacts.md",
+      "logs/release-window.png",
+      "release/0.1.0-20260927-202823/artifacts.json"
+    ]
+  },
+  "constraints": {
+    "preserveExistingWork": "PASS",
+    "forceCheckoutOrReset": "NOT_RUN",
+    "commit": "NOT_RUN",
+    "push": "NOT_RUN",
+    "globalInstall": "NOT_RUN",
+    "userAppOverwrite": "NOT_RUN",
+    "remotePublishing": "NOT_RUN"
+  },
+  "notCovered": [
+    "Developer ID signing and notarization",
+    "other Mac or older macOS",
+    "full Korean IME composition",
+    "VoiceOver audit"
+  ],
+  "documents": [
+    "README.md",
+    "reproduction.md",
+    "acceptance.md",
+    "verification.md",
+    "native.md",
+    "artifacts.md",
+    "final-report.md",
+    "final-gate.md"
+  ]
+}

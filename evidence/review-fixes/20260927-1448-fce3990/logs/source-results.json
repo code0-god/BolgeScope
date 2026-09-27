@@ -1,0 +1,100 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-09-27T08:59:52.597Z",
+  "kind": "independent-supervisor-loader",
+  "passed": 16,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "regression-full-initial-memory",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "source-initial-single-byte-echo",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "source-initial-zero-byte-output",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "source-initial-movd-post-increment",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "source-initial-jump-encrypt-target",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "source-initial-ordered-same-cell-writes",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "source-initial-unsafe-rotate-rollback-boundary",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "source-initial-invalid-generated-fetch",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "source-initial-revisit-search-003",
+      "status": "PASS",
+      "detail": {
+        "cells": 59049
+      }
+    },
+    {
+      "name": "invalid-graphic-does-not-renumber-following-cells",
+      "status": "PASS"
+    },
+    {
+      "name": "emoji-diagnostic-uses-two-utf16-units",
+      "status": "PASS"
+    },
+    {
+      "name": "korean-diagnostic-uses-one-utf16-unit",
+      "status": "PASS"
+    },
+    {
+      "name": "crlf-map-and-raw-bytes-preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "all-six-ascii-spaces-preserve-image",
+      "status": "PASS"
+    },
+    {
+      "name": "normalized-uses-the-same-raw-loader",
+      "status": "PASS"
+    },
+    {
+      "name": "loader-short-long-encoding-boundaries",
+      "status": "PASS"
+    }
+  ]
+}

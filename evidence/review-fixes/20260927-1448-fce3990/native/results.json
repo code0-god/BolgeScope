@@ -1,0 +1,35 @@
+{
+  "status": "BLOCKED",
+  "kind": "actual macOS WKWebView, optional test-only WebDriver, real native pickers and disk I/O; no VM/IPC mocks",
+  "timestamp": "2026-09-27T20:27:59+0900",
+  "process": "apps/desktop/src-tauri/target/debug/bundle/macos/BolgeScope Acceptance.app/Contents/MacOS/bolgescope-desktop",
+  "pid": 8640,
+  "executableSha256": "768a3cca2ee551df5332a8ef9b0c0fec1832eaa726fc56077c8bd91d0d33e9ef",
+  "checks": [
+    {
+      "name": "actual-WKWebView-offline-assets-and-Monaco",
+      "status": "PASS",
+      "detail": {
+        "secure": true,
+        "url": "tauri://localhost",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)"
+      }
+    },
+    {
+      "name": "real-native-open-cancel-preserves-document",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "name": "native-dialog-and-disk-flow",
+      "status": "BLOCKED",
+      "error": "native picker automation failed: CalledProcessError(1, ['osascript', '-e', 'set priorClipboard to the clipboard\\nset targetPath to \"/Users/zerogod/Projects/BolgeScope/evidence/review-fixes/20260927-1448-fce3990/native/fixture.mb\"\\ntry\\n  set the clipboard to targetPath\\n  tell application \"System Events\"\\n    tell (first application process whose unix id is 8640)\\n      set frontmost to true\\n      repeat with attempt from 1 to 160\\n        if (count of windows) > 0 then\\n          try\\n            if exists sheet 1 of window 1 then exit repeat\\n          end try\\n        end if\\n        delay 0.05\\n      end repeat\\n      if not (exists sheet 1 of window 1) then error \"native picker sheet did not appear\"\\n      delay 0.25\\n      keystroke \"g\" using {command down, shift down}\\n      delay 0.25\\n      keystroke \"a\" using command down\\n      keystroke \"v\" using command down\\n      repeat with attempt from 1 to 160\\n        try\\n          set focusedElement to value of attribute \"AXFocusedUIElement\"\\n          if value of attribute \"AXIdentifier\" of focusedElement is \"PathTextField\" and value of focusedElement is targetPath then exit repeat\\n        end try\\n        delay 0.05\\n      end repeat\\n      if value of focusedElement is not targetPath then error \"native picker path was not entered\"\\n      key code 36\\n      repeat with attempt from 1 to 160\\n        try\\n          set focusedElement to value of attribute \"AXFocusedUIElement\"\\n          if value of focusedElement is not targetPath then exit repeat\\n        end try\\n        delay 0.05\\n      end repeat\\n      key code 36\\n    end tell\\n  end tell\\non error errorMessage number errorNumber\\n  set the clipboard to priorClipboard\\n  error errorMessage number errorNumber\\nend try\\nset the clipboard to priorClipboard'])"
+    }
+  ],
+  "notCovered": [
+    "Developer ID signing and notarization",
+    "Other Mac / older macOS",
+    "Full Korean IME composition and VoiceOver audit",
+    "Final uninstrumented release interaction (separate smoke)"
+  ]
+}
