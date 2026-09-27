@@ -1,0 +1,606 @@
+{
+  "schemaVersion": 1,
+  "timestamp": "2026-09-27T02:48:04.341135+00:00",
+  "scope": "Design document and fixture integrity only. No Malbolge VM was executed.",
+  "status": "PASS",
+  "counts": {
+    "requiredDocuments": 9,
+    "markdownFiles": 10,
+    "checks": 78,
+    "failed": 0,
+    "jsonExamples": 3,
+    "relativeLinks": 21,
+    "acceptanceTestsDefined": 42
+  },
+  "checks": [
+    {
+      "check": "document:01_PRODUCT_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:01_PRODUCT_SPEC.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:01_PRODUCT_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:01_PRODUCT_SPEC.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:02_UX_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:02_UX_SPEC.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:02_UX_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:02_UX_SPEC.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:03_ARCHITECTURE.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:03_ARCHITECTURE.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:03_ARCHITECTURE.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:03_ARCHITECTURE.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:04_SEMANTICS_CONTRACT.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:04_SEMANTICS_CONTRACT.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:04_SEMANTICS_CONTRACT.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:04_SEMANTICS_CONTRACT.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:05_DATA_AND_PROTOCOL.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:05_DATA_AND_PROTOCOL.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:05_DATA_AND_PROTOCOL.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:05_DATA_AND_PROTOCOL.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:06_DEBUGGER_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:06_DEBUGGER_SPEC.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:06_DEBUGGER_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:06_DEBUGGER_SPEC.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:07_TEST_AND_RELEASE.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:07_TEST_AND_RELEASE.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:07_TEST_AND_RELEASE.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:07_TEST_AND_RELEASE.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:08_IMPLEMENTATION_PLAN.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:08_IMPLEMENTATION_PLAN.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:08_IMPLEMENTATION_PLAN.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:08_IMPLEMENTATION_PLAN.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:09_DECISIONS_AND_GAPS.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:09_DECISIONS_AND_GAPS.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:09_DECISIONS_AND_GAPS.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:09_DECISIONS_AND_GAPS.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "document:README.md",
+      "status": "PASS",
+      "detail": {
+        "exists": true
+      }
+    },
+    {
+      "check": "fences:README.md",
+      "status": "PASS",
+      "detail": "Opening and closing fences must balance."
+    },
+    {
+      "check": "language:README.md",
+      "status": "PASS",
+      "detail": {
+        "unexpected_script_lines": []
+      }
+    },
+    {
+      "check": "placeholders:README.md",
+      "status": "PASS",
+      "detail": []
+    },
+    {
+      "check": "link:01_PRODUCT_SPEC.md:09_DECISIONS_AND_GAPS.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "09_DECISIONS_AND_GAPS.md"
+      }
+    },
+    {
+      "check": "link:01_PRODUCT_SPEC.md:07_TEST_AND_RELEASE.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "07_TEST_AND_RELEASE.md"
+      }
+    },
+    {
+      "check": "link:02_UX_SPEC.md:05_DATA_AND_PROTOCOL.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "05_DATA_AND_PROTOCOL.md"
+      }
+    },
+    {
+      "check": "link:02_UX_SPEC.md:06_DEBUGGER_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "06_DEBUGGER_SPEC.md"
+      }
+    },
+    {
+      "check": "link:03_ARCHITECTURE.md:05_DATA_AND_PROTOCOL.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "05_DATA_AND_PROTOCOL.md"
+      }
+    },
+    {
+      "check": "link:03_ARCHITECTURE.md:09_DECISIONS_AND_GAPS.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "09_DECISIONS_AND_GAPS.md"
+      }
+    },
+    {
+      "check": "link:04_SEMANTICS_CONTRACT.md:07_TEST_AND_RELEASE.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "07_TEST_AND_RELEASE.md"
+      }
+    },
+    {
+      "check": "json:05_DATA_AND_PROTOCOL.md:1",
+      "status": "PASS",
+      "detail": "Parsed JSON example, not runtime validation."
+    },
+    {
+      "check": "json:05_DATA_AND_PROTOCOL.md:2",
+      "status": "PASS",
+      "detail": "Parsed JSON example, not runtime validation."
+    },
+    {
+      "check": "link:06_DEBUGGER_SPEC.md:05_DATA_AND_PROTOCOL.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "05_DATA_AND_PROTOCOL.md"
+      }
+    },
+    {
+      "check": "json:07_TEST_AND_RELEASE.md:3",
+      "status": "PASS",
+      "detail": "Parsed JSON example, not runtime validation."
+    },
+    {
+      "check": "link:07_TEST_AND_RELEASE.md:fixtures/recurrent_crazy4.mb",
+      "status": "PASS",
+      "detail": {
+        "relative": "fixtures/recurrent_crazy4.mb"
+      }
+    },
+    {
+      "check": "link:08_IMPLEMENTATION_PLAN.md:07_TEST_AND_RELEASE.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "07_TEST_AND_RELEASE.md"
+      }
+    },
+    {
+      "check": "link:08_IMPLEMENTATION_PLAN.md:09_DECISIONS_AND_GAPS.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "09_DECISIONS_AND_GAPS.md"
+      }
+    },
+    {
+      "check": "link:README.md:01_PRODUCT_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "01_PRODUCT_SPEC.md"
+      }
+    },
+    {
+      "check": "link:README.md:02_UX_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "02_UX_SPEC.md"
+      }
+    },
+    {
+      "check": "link:README.md:03_ARCHITECTURE.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "03_ARCHITECTURE.md"
+      }
+    },
+    {
+      "check": "link:README.md:04_SEMANTICS_CONTRACT.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "04_SEMANTICS_CONTRACT.md"
+      }
+    },
+    {
+      "check": "link:README.md:05_DATA_AND_PROTOCOL.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "05_DATA_AND_PROTOCOL.md"
+      }
+    },
+    {
+      "check": "link:README.md:06_DEBUGGER_SPEC.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "06_DEBUGGER_SPEC.md"
+      }
+    },
+    {
+      "check": "link:README.md:07_TEST_AND_RELEASE.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "07_TEST_AND_RELEASE.md"
+      }
+    },
+    {
+      "check": "link:README.md:08_IMPLEMENTATION_PLAN.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "08_IMPLEMENTATION_PLAN.md"
+      }
+    },
+    {
+      "check": "link:README.md:09_DECISIONS_AND_GAPS.md",
+      "status": "PASS",
+      "detail": {
+        "relative": "09_DECISIONS_AND_GAPS.md"
+      }
+    },
+    {
+      "check": "link:README.md:fixtures/recurrent_crazy4.mb",
+      "status": "PASS",
+      "detail": {
+        "relative": "fixtures/recurrent_crazy4.mb"
+      }
+    },
+    {
+      "check": "test-definitions",
+      "status": "PASS",
+      "detail": {
+        "count": 42
+      }
+    },
+    {
+      "check": "test-references",
+      "status": "PASS",
+      "detail": {
+        "undefined": []
+      }
+    },
+    {
+      "check": "R-definitions",
+      "status": "PASS",
+      "detail": {
+        "count": 42
+      }
+    },
+    {
+      "check": "D-definitions",
+      "status": "PASS",
+      "detail": {
+        "count": 18
+      }
+    },
+    {
+      "check": "G-definitions",
+      "status": "PASS",
+      "detail": {
+        "count": 8
+      }
+    },
+    {
+      "check": "source-aliases",
+      "status": "PASS",
+      "detail": {
+        "undefined": []
+      }
+    },
+    {
+      "check": "canonical-phases",
+      "status": "PASS",
+      "detail": [
+        "DISPOSED",
+        "FAULTED",
+        "HALTED",
+        "PAUSED",
+        "READY",
+        "RUNNING",
+        "UNLOADED",
+        "WAITING_INPUT"
+      ]
+    },
+    {
+      "check": "no-legacy-wait-alias",
+      "status": "PASS",
+      "detail": "WAITING_INPUT is the canonical phase."
+    },
+    {
+      "check": "fixture-integrity",
+      "status": "PASS",
+      "detail": {
+        "fileBytes": 108,
+        "logicalCells": 87,
+        "logicalSha256": "69ed29dde001b80de62e2feaf2a2f5463ec7ee9666b981954ef63a938a854a81"
+      }
+    },
+    {
+      "check": "fixture-document-copy",
+      "status": "PASS",
+      "detail": "Exact source bytes including LF."
+    },
+    {
+      "check": "table-length:xlat1",
+      "status": "PASS",
+      "detail": {
+        "length": 94,
+        "scope": "transcription integrity, not VM execution"
+      }
+    },
+    {
+      "check": "table-length:xlat2",
+      "status": "PASS",
+      "detail": {
+        "length": 94,
+        "scope": "transcription integrity, not VM execution"
+      }
+    },
+    {
+      "check": "table-residue-transcription",
+      "status": "PASS",
+      "detail": {
+        "i": 4,
+        "<": 5,
+        "/": 23,
+        "*": 39,
+        "j": 40,
+        "p": 62,
+        "o": 68,
+        "v": 81
+      }
+    },
+    {
+      "check": "permutation-transcription",
+      "status": "PASS",
+      "detail": "The 94-character xlat2 transcription is a printable-ASCII permutation."
+    }
+  ],
+  "documents": [
+    {
+      "path": "01_PRODUCT_SPEC.md",
+      "bytes": 9410,
+      "lines": 95,
+      "sha256": "7f676bd60f2c033f164550c2f2f1a52cfbbd6f78743d54231a5ffd71b765028b"
+    },
+    {
+      "path": "02_UX_SPEC.md",
+      "bytes": 17901,
+      "lines": 186,
+      "sha256": "9eab0afaf050fefa0af7b91cbf9411bdfbf7d4c70d063393dbb88372d3b4f726"
+    },
+    {
+      "path": "03_ARCHITECTURE.md",
+      "bytes": 12813,
+      "lines": 134,
+      "sha256": "de123189a8eb6f88569875fa4de717f7daa564fce8b98bc89d8a9eec50bd7eec"
+    },
+    {
+      "path": "04_SEMANTICS_CONTRACT.md",
+      "bytes": 12327,
+      "lines": 166,
+      "sha256": "1ecca3491d29c7c0f2c8c453194b342c317966940a0d9325aaa4d64ba7f9b9aa"
+    },
+    {
+      "path": "05_DATA_AND_PROTOCOL.md",
+      "bytes": 22631,
+      "lines": 328,
+      "sha256": "16dc0e484729afb2aaebe7cc08d30bafdaea204d6a199a79a74a3741f217d2e9"
+    },
+    {
+      "path": "06_DEBUGGER_SPEC.md",
+      "bytes": 16258,
+      "lines": 147,
+      "sha256": "c0acb14a12148cb2e25f9cfc5348c09c1e5255c1a6aeb3fbc5e24c830cd7469c"
+    },
+    {
+      "path": "07_TEST_AND_RELEASE.md",
+      "bytes": 13779,
+      "lines": 188,
+      "sha256": "ba7e6588366b03bee7b281a2d7a72c8ee1bdf76221b16ed8804c84199f6ae51d"
+    },
+    {
+      "path": "08_IMPLEMENTATION_PLAN.md",
+      "bytes": 8875,
+      "lines": 100,
+      "sha256": "8924c16d8f1d43173f98969917cf0b01d12ff5076bce78244ad6472b5a4fc596"
+    },
+    {
+      "path": "09_DECISIONS_AND_GAPS.md",
+      "bytes": 19166,
+      "lines": 205,
+      "sha256": "c2dc5d178229e7235a3b3ed8cf4d276d22e292cba92a6a81439e3173c8ca8a7e"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3741,
+      "lines": 51,
+      "sha256": "6a4bea010d9c0f2f15d5fd1aa7cf0868184543a7e1b5dc31949068abd63eee71"
+    }
+  ],
+  "notRun": [
+    "VM conformance",
+    "TypeScript compilation",
+    "product tests T01-T39/T41/T42",
+    "app build",
+    "native UI tests",
+    ".app/.dmg packaging",
+    "signing",
+    "notarization",
+    "other-Mac installation",
+    "performance measurement"
+  ],
+  "limitations": [
+    "These mechanical checks do not prove semantic correctness or completeness of the design."
+  ]
+}
