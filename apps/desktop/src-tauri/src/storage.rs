@@ -1,5 +1,7 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
 use std::{
     collections::HashMap,
     fs::{self, File, OpenOptions},
@@ -225,14 +227,24 @@ fn save_content(path: &Path, content: SaveContent<'_>) -> NativeResult<SavedFile
     }
     let parent = checked_parent(path)?;
     check_target(path, content.observed, content.max_bytes)?;
+    #[cfg(unix)]
+    let permissions = if content.observed.is_some() {
+        Some(fs::metadata(path).map_err(io_error)?.permissions())
+    } else {
+        None
+    };
     let temporary = parent.join(format!(".bolgescope-{}.tmp", Uuid::new_v4()));
     let write_result = (|| -> NativeResult<()> {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&temporary)
-            .map_err(io_error)?;
+        let mut options = OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        options.mode(0o600);
+        let mut file = options.open(&temporary).map_err(io_error)?;
         file.write_all(content.bytes).map_err(io_error)?;
+        #[cfg(unix)]
+        if let Some(permissions) = permissions {
+            file.set_permissions(permissions).map_err(io_error)?;
+        }
         file.sync_all().map_err(io_error)?;
         commit_temporary(path, &temporary, content.observed, content.max_bytes)
     })();

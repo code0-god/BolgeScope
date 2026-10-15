@@ -5,6 +5,51 @@ use crate::storage::{commit_temporary, digest, new_id, save_file, save_trace, MA
 use crate::trace_export;
 use std::fs;
 
+#[cfg(unix)]
+#[test]
+fn atomic_save_permissions_preserve_private_and_executable_modes() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = std::env::temp_dir().join(format!("bolgescope-test-{}", new_id()));
+    fs::create_dir(&root).unwrap();
+    let root = fs::canonicalize(root).unwrap();
+    let modes = [0o600, 0o751];
+    let paths = modes.map(|mode| {
+        let path = root.join(format!("source-{mode:o}.mb"));
+        fs::write(&path, b"original").unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(mode)).unwrap();
+        path
+    });
+
+    for path in &paths {
+        save_file(path, b"changed", Some(&digest(b"original"))).unwrap();
+    }
+
+    let saved_modes = paths.map(|path| {
+        assert_eq!(fs::read(&path).unwrap(), b"changed");
+        fs::metadata(path).unwrap().permissions().mode() & 0o777
+    });
+    fs::remove_dir_all(root).unwrap();
+    assert_eq!(saved_modes, modes);
+}
+
+#[cfg(unix)]
+#[test]
+fn atomic_save_permissions_are_private_when_creating_a_file() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = std::env::temp_dir().join(format!("bolgescope-test-{}", new_id()));
+    fs::create_dir(&root).unwrap();
+    let root = fs::canonicalize(root).unwrap();
+    let path = root.join("source.mb");
+
+    save_file(&path, b"private", None).unwrap();
+
+    let mode = fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+    fs::remove_dir_all(root).unwrap();
+    assert_eq!(mode & 0o177, 0);
+}
+
 #[test]
 fn source_save_rejects_bytes_that_cannot_be_read_back() {
     let root = std::env::temp_dir().join(format!("bolgescope-test-{}", new_id()));
