@@ -27,7 +27,7 @@ export class TestWorkerClient {
       this.worker.postMessage({ command: 'run', requestId, testCase, sourceBytes });
     });
   }
-  cancel(requestId?: string): void { this.worker.postMessage({ command: 'cancel', requestId }); }
+  cancel(requestId?: string): void { this.worker.postMessage(requestId === undefined ? { command: 'cancel' } : { command: 'cancel', requestId }); }
   terminate(): void {
     this.worker.terminate();
     for (const pending of this.pending.values()) pending.reject(new Error('TEST_WORKER_CRASH: terminated'));

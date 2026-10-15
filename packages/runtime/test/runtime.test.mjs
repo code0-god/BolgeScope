@@ -235,6 +235,31 @@ describe('real runtime worker', () => {
     expect(result.status).toBe('PASSED');
     expect(result.failures).toEqual([]);
   });
+  it.each(['omitted', 'matching', 'different'])('handles public test cancellation with %s request ID', async target => {
+    // Given a real test Worker and a case that needs multiple execution slices.
+    const bridge = new Bridge(true);
+    await bridge.ready;
+    let requestId;
+    bridge.postMessage = value => {
+      if (value.command === 'run') requestId = value.requestId;
+      bridge.node.postMessage(value);
+    };
+    const tests = new TestWorkerClient(bridge);
+    const running = tests.run({
+      schemaVersion: 1, testId: 'cancel-long-run', name: 'Cancellable run',
+      source: { path: 'program.mb', kind: 'raw' }, inputHex: '', closeInput: true,
+      maxInstructions: 20_000, expected: { terminal: 'HALTED', step: 20_000 },
+    }, Buffer.from(longFixture));
+
+    // When the public client sends a cancellation immediately after run.
+    if (target === 'omitted') tests.cancel();
+    else tests.cancel(target === 'matching' ? requestId : 'another-request');
+    const result = await bounded(running, 5000);
+
+    // Then cancellation stops at the first yield only when it targets this run.
+    expect(result.status).toBe(target === 'different' ? 'PASSED' : 'CANCELLED');
+    expect(result.state?.head.step).toBe(target === 'different' ? 20_000 : 4096);
+  });
   it('returns one bounded point-consistent view bundle', async () => {
     const runtime = await client();
     await runtime.load(fixture);
