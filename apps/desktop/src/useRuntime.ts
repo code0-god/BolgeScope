@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ProjectFile } from '@bolgescope/contracts';
 import { MEMORY_SIZE, type JournalEvent, type MachineHead, type MachineState, type RoleCounts, type SourceKind, type Watchpoint } from '@bolgescope/core';
 import { createWorkerClient, type TraceChunk, type ViewBundle, type ViewQuery } from '@bolgescope/runtime';
 import { OperationOwner } from './operationOwner';
@@ -170,8 +171,8 @@ export function useRuntime() {
       }
     },
     configureView,
-    load: (source: string | Uint8Array, kind: SourceKind) => command(async (runtime, owns) => {
-      await runtime.load(source, kind);
+    load: (source: string | Uint8Array, kind: SourceKind, run?: ProjectFile['run']) => command(async (runtime, owns) => {
+      await runtime.load(source, kind, run);
       if (!owns()) return;
       needsInitial.current = true; selectedPoint.current = null; overviewCache.current = null;
       setView(previous => ({ ...previous, point: null, initial: {}, memory: {}, roles: {}, history: [], snapshotSourceLength: 0 }));

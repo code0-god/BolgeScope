@@ -95,3 +95,97 @@ it('rewinding a waiting Run clears its old automatic resume intent', async () =>
   await runtime.run(100);
   expect((await until(runtime, state => state.phase === 'WAITING_INPUT')).head.step).toBe(2);
 });
+
+const projectRun = { inputHex: '4142430A', closeInput: true, maxInstructions: 1, historyLimitMiB: 1, outputLimitBytes: 1 };
+
+async function runToStop(runtime) {
+  const version = runtime.getCurrentState().stateVersion;
+  const completed = Promise.withResolvers();
+  const unsubscribe = runtime.subscribe(state => {
+    if (state.stateVersion > version && state.phase !== 'RUNNING') completed.resolve(state);
+  });
+  const timeout = setTimeout(() => completed.reject(new Error('Run did not stop')), 5000);
+  try { await runtime.run(); return await completed.promise; }
+  finally { clearTimeout(timeout); unsubscribe(); }
+}
+
+it.each(['load', 'restart'])('initializes project input and EOF on %s', async operation => {
+  // Given a project with input and EOF configured before execution.
+  const runtime = await client();
+  const loaded = await runtime.load(fixture, 'raw', projectRun);
+  if (operation === 'restart') await runtime.step();
+
+  // When the project snapshot is loaded or restarted.
+  const state = operation === 'restart' ? await runtime.restart() : loaded;
+
+  // Then input is present exactly once and ready from its beginning.
+  expect(state.head.tape).toMatchObject({ visibleLength: 4, cursor: 0, closed: true });
+});
+
+it('uses the project instruction budget for every Run', async () => {
+  // Given a project with a one-instruction budget.
+  const runtime = await client();
+  await runtime.load(fixture, 'raw', projectRun);
+
+  // When Run is requested without an explicit budget override.
+  const state = await runToStop(runtime);
+
+  // Then it stops after one instruction instead of reaching an input wait.
+  expect(state.reason).toBe('BUDGET');
+  expect(state.head.step).toBe(1);
+});
+
+it.each(['load', 'restart'])('enforces the project output limit after %s', async operation => {
+  // Given a two-output program with a one-byte output limit.
+  const runtime = await client();
+  await runtime.load('<<v', 'normalized', { ...projectRun, inputHex: '', maxInstructions: 100 });
+  if (operation === 'restart') await runtime.restart();
+
+  // When it runs to its first stopping boundary.
+  const state = await runToStop(runtime);
+
+  // Then the second output is blocked without committing that instruction.
+  expect(state.reason).toBe('OUTPUT_LIMIT');
+  expect(state.output).toEqual([0]);
+});
+
+it('evicts history at the configured project budget', async () => {
+  // Given more instruction history than the configured one MiB budget retains.
+  const runtime = await client();
+  await runtime.load(`${'o'.repeat(9999)}v`, 'normalized', { ...projectRun, inputHex: '', maxInstructions: 10000 });
+
+  // When the program completes.
+  const state = await runToStop(runtime);
+
+  // Then history has been evicted rather than retaining the default 64 MiB.
+  expect(state.head.step).toBe(10000);
+  expect(state.earliestEventIndex).toBeGreaterThan(0);
+});
+
+it('rejects invalid project settings without replacing the current session', async () => {
+  // Given an established session and an invalid external load configuration.
+  const runtime = await client();
+  const session = runtime.getSessionId();
+
+  // When a zero instruction budget crosses the Worker boundary.
+  await expect(runtime.load(fixture, 'raw', { ...projectRun, maxInstructions: 0 })).rejects.toThrow(/INVALID_REQUEST/);
+
+  // Then the prior session remains usable.
+  expect(runtime.getSessionId()).toBe(session);
+  expect((await runtime.step()).head.step).toBe(1);
+});
+
+it('restores standalone defaults when loading a document after a project', async () => {
+  // Given a configured project followed by a standalone source.
+  const runtime = await client();
+  await runtime.load(fixture, 'raw', projectRun);
+  await runtime.load('<<v', 'normalized');
+
+  // When the standalone source runs.
+  const state = await runToStop(runtime);
+
+  // Then neither project input nor project output/budget limits leak into it.
+  expect(state.phase).toBe('HALTED');
+  expect(state.output).toEqual([0, 0]);
+  expect(state.head.tape).toMatchObject({ visibleLength: 0, closed: false });
+});

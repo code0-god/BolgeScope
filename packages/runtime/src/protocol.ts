@@ -1,4 +1,5 @@
 import type { JournalEvent, MachineHead, MachineState, PointView, RoleCounterPage, SourceKind, Watchpoint } from '@bolgescope/core';
+import type { ProjectFile } from '@bolgescope/contracts';
 
 export type MemoryRange = Readonly<{ start: number; count: number }>;
 export type ViewQuery = Readonly<{
@@ -16,7 +17,7 @@ export type ViewBundle = Readonly<{
 }>;
 
 export type Command =
-  | Readonly<{ command: 'load'; payload: { source: string | Uint8Array; kind: SourceKind } }>
+  | Readonly<{ command: 'load'; payload: { source: string | Uint8Array; kind: SourceKind; run?: ProjectFile['run'] } }>
   | Readonly<{ command: 'run'; payload: { budget?: number } }>
   | Readonly<{ command: 'step' | 'pause' | 'stepBack' | 'reverseContinue' | 'restart' | 'stop' | 'closeInput' | 'getState' | 'getHistory' | 'getOutput'; payload: Record<string, never> }>
   | Readonly<{ command: 'appendInput'; payload: { bytes: readonly number[] } }>

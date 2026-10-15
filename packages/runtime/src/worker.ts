@@ -1,4 +1,5 @@
 import { LoadError, loadProgram, MalbolgeMachine } from '@bolgescope/core';
+import { projectSchema, type ProjectFile } from '@bolgescope/contracts';
 import type { MachineState, Program, ReverseSearchCursor, SourceKind, StopReason } from '@bolgescope/core';
 import type { MemoryRange, Request, Response, RuntimeValue, StateEvent, ViewBundle, ViewPage } from './protocol.js';
 import { buildTrace } from './trace.js';
@@ -6,6 +7,7 @@ import { buildTrace } from './trace.js';
 const scope = self as DedicatedWorkerGlobalScope;
 let machine: MalbolgeMachine | null = null;
 let program: Program | null = null;
+let runConfig: ProjectFile['run'] | undefined;
 let sessionId: string | null = null;
 let epoch = 0;
 let lastSequence = 0;
@@ -154,6 +156,17 @@ function traceChunk(index: number): RuntimeValue {
   return { exportId: trace.exportId, chunkIndex: index, bytes: trace.bytes.slice(start, end), done: end >= trace.bytes.length, totalBytes: trace.bytes.length, digest: trace.digest };
 }
 
+function configuredMachine(source: Program, settings?: ProjectFile['run']): MalbolgeMachine {
+  const next = new MalbolgeMachine(source, settings ? settings.historyLimitMiB * 1024 * 1024 : undefined);
+  if (settings) {
+    next.setOutputLimit(settings.outputLimitBytes);
+    const input = settings.inputHex.match(/../g)?.map(pair => Number.parseInt(pair, 16)) ?? [];
+    if (input.length) next.appendInput(input);
+    if (settings.closeInput) next.closeInput();
+  }
+  return next;
+}
+
 // Lifecycle requests use strictly increasing epochs. Validation completes before
 // commit; a failed replacement leaves the prior machine, session, and epoch live.
 function lifecycleCommand(request: Request): RuntimeValue {
@@ -163,15 +176,19 @@ function lifecycleCommand(request: Request): RuntimeValue {
     const source = payload.source;
     const kind = payload.kind;
     if (!(typeof source === 'string' || source instanceof Uint8Array) || (kind !== 'raw' && kind !== 'normalized')) return fail('INVALID_REQUEST', 'Invalid source');
+    const parsedRun = payload.run === undefined ? undefined : projectSchema.shape.run.safeParse(payload.run);
+    if (parsedRun && !parsedRun.success) return fail('INVALID_REQUEST', 'Invalid project run settings');
+    const settings = parsedRun?.data;
     const loaded = loadProgram(source, kind as SourceKind);
-    const nextMachine = new MalbolgeMachine(loaded);
+    const nextMachine = configuredMachine(loaded, settings);
     cancelHistory(new WorkerRequestError('OPERATION_CANCELLED', 'Session was replaced'));
     machine = nextMachine;
     program = loaded;
+    runConfig = settings;
     sessionId = crypto.randomUUID();
   } else if (request.command === 'restart') {
     if (!program || !machine) return fail('SESSION_MISMATCH', 'No source snapshot');
-    const nextMachine = new MalbolgeMachine(program);
+    const nextMachine = configuredMachine(program, runConfig);
     cancelHistory(new WorkerRequestError('OPERATION_CANCELLED', 'Session was restarted'));
     machine = nextMachine;
     sessionId = crypto.randomUUID();
@@ -180,7 +197,7 @@ function lifecycleCommand(request: Request): RuntimeValue {
     const state = machine.getState();
     cancelHistory(new WorkerRequestError('OPERATION_CANCELLED', 'Session was stopped'));
     intent = 'NONE'; runRemaining = 0; exportGeneration++; exporting = false; trace = null;
-    machine = null; program = null; sessionId = null;
+    machine = null; program = null; runConfig = undefined; sessionId = null;
     epoch = request.clientEpoch; lastSequence = request.requestSequence;
     return state;
   } else return fail('INVALID_REQUEST', 'Unknown lifecycle command');
@@ -201,7 +218,7 @@ async function command(request: Request): Promise<RuntimeValue> {
   if (active.getPhase() === 'RUNNING' && (request.command === 'run' || request.command === 'step' || request.command === 'stepBack' || request.command === 'reverseContinue' || request.command === 'rewindTo' || request.command === 'createBranch')) return fail('BUSY', 'Run is active; pause first');
   switch (request.command) {
     case 'run': {
-      const budget = payload.budget === undefined ? 1_000_000 : payload.budget;
+      const budget = payload.budget === undefined ? runConfig?.maxInstructions ?? 1_000_000 : payload.budget;
       if (!integer(budget, 1, 1_000_000_000)) return fail('INVALID_REQUEST', 'Invalid instruction budget');
       if (intent !== 'NONE' && active.getPhase() !== 'WAITING_INPUT') return fail('BUSY', 'Execution intent is active');
       runRemaining = budget; intent = 'RUN'; lastContinuousEmit = performance.now();

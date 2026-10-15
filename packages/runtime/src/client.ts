@@ -1,4 +1,5 @@
 import type { JournalEvent, MachineState, PointView, SourceKind, Watchpoint } from '@bolgescope/core';
+import type { ProjectFile } from '@bolgescope/contracts';
 import type { Command, Request, Response, RuntimeValue, StateEvent, TraceChunk, ViewBundle, ViewQuery } from './protocol.js';
 
 type Pending = {
@@ -66,8 +67,8 @@ export class RuntimeClient {
   subscribe(listener: (state: MachineState) => void): () => void { this.listeners.add(listener); if (this.latest) listener(this.latest); return () => this.listeners.delete(listener); }
   getCurrentState(): MachineState | null { return this.latest; }
   getSessionId(): string | null { return this.sessionId; }
-  load(source: string | Uint8Array, kind: SourceKind = 'raw'): Promise<MachineState> {
-    return this.lifecycleRequest({ command: 'load', payload: { source, kind } }, 'STALE_SESSION: replaced by load');
+  load(source: string | Uint8Array, kind: SourceKind = 'raw', run?: ProjectFile['run']): Promise<MachineState> {
+    return this.lifecycleRequest({ command: 'load', payload: { source, kind, ...(run === undefined ? {} : { run }) } }, 'STALE_SESSION: replaced by load');
   }
   run(budget?: number): Promise<MachineState> { return this.request({ command: 'run', payload: budget === undefined ? {} : { budget } }); }
   step(): Promise<MachineState> { return this.request({ command: 'step', payload: {} }); }

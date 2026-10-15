@@ -5,6 +5,7 @@ const document: Document = {
   id: 'raw:one', name: 'main.mb', kind: 'raw', text: 'first', revision: 1, dirty: true,
   grantId: null, diskRevision: 'old', originalBytes: null, encodingError: false,
   projectGrantId: 'project', projectId: 'project-id', relativePath: 'programs/main.mb', recoveryId: 'recovery',
+  runConfig: { inputHex: '41', closeInput: true, maxInstructions: 2, historyLimitMiB: 1, outputLimitBytes: 1 },
 };
 
 describe('document saving', () => {
@@ -20,7 +21,7 @@ describe('document saving', () => {
     const saved = await pending;
     expect(saved).not.toBeNull();
     if (!saved) return;
-    expect(mergeSavedDocument(later, document, saved)).toMatchObject({ text: 'second', revision: 2, dirty: true, diskRevision: 'new', originalBytes: null, recoveryId: 'recovery' });
+    expect(mergeSavedDocument(later, document, saved)).toMatchObject({ text: 'second', revision: 2, dirty: true, diskRevision: 'new', originalBytes: null, recoveryId: 'recovery', runConfig: document.runConfig });
     expect(adapter.saveProjectFile).toHaveBeenCalledWith('project', 'programs/main.mb', new TextEncoder().encode('first'), 'old');
   });
 
@@ -30,7 +31,7 @@ describe('document saving', () => {
       saveFile: vi.fn(async () => 'next-rev'), saveProjectFile: vi.fn(),
     };
     const saved = await saveDocument(document, true, adapter);
-    expect(saved).toMatchObject({ name: 'copy.mb', grantId: 'copy', projectGrantId: undefined, relativePath: undefined, dirty: false });
+    expect(saved).toMatchObject({ name: 'copy.mb', grantId: 'copy', projectGrantId: undefined, relativePath: undefined, dirty: false, runConfig: undefined });
     if (!saved) return;
     await saveDocument({ ...saved, text: 'later', revision: 2, dirty: true }, false, adapter);
     expect(adapter.saveFile).toHaveBeenCalledWith('copy', new TextEncoder().encode('later'), 'copy-rev');

@@ -15,7 +15,7 @@ import { Explorer, Lens, LessonPanel, Toolbar, type Dock, type SourceView, type 
 import { DiffPanel, IOPanel, MemoryPanel, Registers, SelectedCell, StepInspector, TimelinePanel } from './Panels';
 import SourceEditor from './SourceEditor';
 import NotesPanel from './NotesPanel';
-import ProjectTestsPanel from './ProjectTestsPanel';
+import ProjectTestsPanel, { type ProjectSource } from './ProjectTestsPanel';
 import { nativeAvailable, nativeError, openFile, saveAs, saveFile, saveProjectFile, listRecovery, writeRecovery, removeRecovery, type RecoveryRecord } from './native';
 import { inputBytes, parseHex } from './bytes';
 import { useRuntime } from './useRuntime';
@@ -275,10 +275,10 @@ export default function App() {
       if (encodingError) setNotice(t('잘못된 UTF-8 바이트를 포함합니다. 원본 바이트는 보존되며 편집은 잠겨 있습니다.', 'Invalid UTF-8 bytes. Original bytes are preserved and editing is locked.'));
     } catch (error) { showError(error); }
   }
-  function openProjectSource(file: { name: string; kind: SourceKind; bytes: Uint8Array; projectGrantId: string; projectTargetId: string; projectId: string; relativePath: string; diskRevision: string }) {
+  function openProjectSource(file: ProjectSource) {
     let text = ''; let encodingError = false;
     try { text = decoder.decode(file.bytes); } catch { text = new TextDecoder().decode(file.bytes); encodingError = true; }
-    const document: Document = { ...newDocument(file.kind), name: file.name, text, notesTargetId: file.projectTargetId, projectGrantId: file.projectGrantId, projectId: file.projectId, relativePath: file.relativePath, diskRevision: file.diskRevision, originalBytes: file.bytes, encodingError };
+    const document: Document = { ...newDocument(file.kind), name: file.name, text, notesTargetId: file.projectTargetId, projectGrantId: file.projectGrantId, projectId: file.projectId, relativePath: file.relativePath, diskRevision: file.diskRevision, originalBytes: file.bytes, encodingError, runConfig: file.runConfig };
     updateDocuments(items => [...items, document]); activateDocument(document.id); setSourceView('source'); setSelectedAddress(null);
   }
   function restoreRecovery(record: RecoveryRecord) {
@@ -316,7 +316,7 @@ export default function App() {
     const captured = active;
     const capturedSource = currentSource;
     const changed = bindingStale;
-    await runtime.load(captured.text, captured.kind);
+    await runtime.load(captured.text, captured.kind, captured.runConfig);
     if (!sessionOperations.current.owns(operation)) return false;
     if (changed) {
       setBreakpoints([]); setWatchpoints([]); bindingSource.current = null;
