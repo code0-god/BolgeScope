@@ -30,6 +30,7 @@ type Props = Readonly<{
   ackTraceExport: (exportId: string, chunkIndex: number) => Promise<TraceChunk>;
   cancelTraceExport: (exportId: string) => Promise<MachineState>;
   t: (ko: string, en: string) => string;
+  confirm: (message: string) => Promise<boolean>;
 }>;
 
 const encoder = new TextEncoder();
@@ -157,7 +158,7 @@ export default function ProjectTestsPanel(props: Props) {
       setNotice(t('실행 중인 설치 앱에서 trace를 내보낼 수 있습니다.', 'Trace export requires a running installed app.'));
       return;
     }
-    if (!window.confirm(t('Trace에는 입력을 제외해도 레지스터와 메모리 값에 민감한 정보가 남을 수 있습니다. 내보낼까요?', 'A trace can reveal sensitive data through registers and memory even when input is excluded. Export?'))) return;
+    if (!await props.confirm(t('Trace에는 입력을 제외해도 레지스터와 메모리 값에 민감한 정보가 남을 수 있습니다. 내보낼까요?', 'A trace can reveal sensitive data through registers and memory even when input is excluded. Export?'))) return;
     let exportId: string | null = null;
     try {
       let chunk = await props.beginTraceExport(includeSource, includeInput);

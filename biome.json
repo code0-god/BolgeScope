@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "rules": {
+      "suspicious": { "noAlert": "error" }
+    }
+  }
+}

@@ -29,6 +29,7 @@ type Props = Readonly<{
   sourceValid?: boolean;
   address: number | null;
   t: (ko: string, en: string) => string;
+  confirm: (message: string) => Promise<boolean>;
 }>;
 const encoder = new TextEncoder();
 
@@ -65,6 +66,7 @@ export default function NotesPanel({
   sourceValid = true,
   address,
   t,
+  confirm,
 }: Props) {
   const targetKey = projectGrantId
     ? `project:${notesTargetId ?? projectId ?? projectGrantId}`
@@ -214,11 +216,10 @@ export default function NotesPanel({
   }
 
   async function save(): Promise<void> {
+    if (!digest || !editorRef.current) return;
+    if ((changed || stale) && !await confirm(t('소스의 논리 주소가 바뀌었을 수 있습니다. 선택 주소에 노트를 다시 연결할까요?', 'The logical source may have changed. Rebind notes to current addresses?'))) return;
     const current = editorRef.current;
-    if (!digest || !current) return;
-    if (changed || stale) {
-      if (!window.confirm(t('소스의 논리 주소가 바뀌었을 수 있습니다. 선택 주소에 노트를 다시 연결할까요?', 'The logical source may have changed. Rebind notes to current addresses?'))) return;
-    }
+    if (!current) return;
     const snapshot = captureNoteSave(current, sourceRevision);
     const existingProject = projectFileRef.current;
     const projectFile: NotesFile | null = projectId ? {
