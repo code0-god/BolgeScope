@@ -193,4 +193,19 @@ describe('Malbolge core', () => {
     expect(state.head.registers.c).toBe(3);
     expect(state.head.step).toBe(3);
   });
+  it('evicts the oldest history by exact UTF-8 JSON size', () => {
+    const program = loadProgram(fixture);
+    const runToHalt = (machine: MalbolgeMachine): MalbolgeMachine => {
+      machine.appendInput([0x41, 0x42, 0x43, 0x0a]);
+      machine.closeInput();
+      machine.run();
+      return machine;
+    };
+    const events = runToHalt(new MalbolgeMachine(program)).getHistory();
+    const kept = events.slice(-10);
+    const limit = kept.reduce((total, event) => total + new TextEncoder().encode(JSON.stringify(event)).length, 0);
+    const bounded = runToHalt(new MalbolgeMachine(program, limit));
+    expect(bounded.getHistory()).toEqual(kept);
+    expect(bounded.getState().earliestEventIndex).toBe(events.at(-11)?.eventIndex);
+  });
 });

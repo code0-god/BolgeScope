@@ -2,7 +2,7 @@ import { MEMORY_SIZE } from './codec.js';
 import { ObservationCounters } from './counters.js';
 import { historicalPoint, matchesWatchpoint, reverseTarget, reverseTargetSlice } from './history.js';
 import type { ReverseSearchCursor, ReverseSearchSlice } from './history.js';
-import { appendJournal, canRecord } from './journal.js';
+import { appendJournal, journalBytes } from './journal.js';
 import type { JournalDraft } from './journal.js';
 import { planStep } from './step.js';
 import type { Program } from './source.js';
@@ -180,10 +180,11 @@ export class MalbolgeMachine {
     if (!bytes.length) return this.getState();
     const before = this.head.tape.visibleLength;
     const draft: JournalDraft = { kind: 'inputAppend', bytes: [...bytes], visibleLengthBefore: before, stepAfter: this.head.step };
-    if (!canRecord(draft, this.historyBytesLimit, this.eventIndex)) throw new RangeError('RESOURCE_LIMIT');
+    const draftBytes = journalBytes(draft, this.eventIndex);
+    if (draftBytes > this.historyBytesLimit) throw new RangeError('RESOURCE_LIMIT');
     for (const byte of bytes) this.input.push(byte);
     this.head = { ...this.head, tape: { ...this.head.tape, visibleLength: before + bytes.length } };
-    this.record(draft);
+    this.record(draft, draftBytes);
     return this.getState();
   }
   closeInput(): MachineState {
@@ -191,9 +192,10 @@ export class MalbolgeMachine {
     if (this.eventIndex !== this.earliestEventIndex + this.journal.length) throw new Error('BRANCH_REQUIRED');
     if (this.head.tape.closed) return this.getState();
     const draft: JournalDraft = { kind: 'inputClose', closedBefore: false, stepAfter: this.head.step };
-    if (!canRecord(draft, this.historyBytesLimit, this.eventIndex)) throw new RangeError('RESOURCE_LIMIT');
+    const draftBytes = journalBytes(draft, this.eventIndex);
+    if (draftBytes > this.historyBytesLimit) throw new RangeError('RESOURCE_LIMIT');
     this.head = { ...this.head, tape: { ...this.head.tape, closed: true } };
-    this.record(draft);
+    this.record(draft, draftBytes);
     return this.getState();
   }
 
@@ -222,16 +224,20 @@ export class MalbolgeMachine {
       this.phase = 'PAUSED'; this.reason = 'REPLAY_DIVERGED'; return;
     }
     if (planned.kind === 'fault') {
-      if (!future && !canRecord({ kind: 'fault', fault: planned.fault, terminalBefore: 'NONE', stepAfter: this.head.step }, this.historyBytesLimit, this.eventIndex)) { this.phase = 'PAUSED'; this.reason = 'RESOURCE_LIMIT'; return; }
+      const draft: JournalDraft = { kind: 'fault', fault: planned.fault, terminalBefore: 'NONE', stepAfter: this.head.step };
+      const draftBytes = future ? 0 : journalBytes(draft, this.eventIndex);
+      if (draftBytes > this.historyBytesLimit) { this.phase = 'PAUSED'; this.reason = 'RESOURCE_LIMIT'; return; }
       this.head = { ...this.head, terminal: 'FAULTED' };
       this.phase = 'FAULTED'; this.reason = planned.fault.code;
       if (future) this.eventIndex = future.eventIndex;
-      else this.record({ kind: 'fault', fault: planned.fault, terminalBefore: 'NONE', stepAfter: this.head.step });
+      else this.record(draft, draftBytes);
       this.stateVersion++;
       return;
     }
     if (planned.transaction.after.outputLength > this.outputLimit) { this.phase = 'PAUSED'; this.reason = 'OUTPUT_LIMIT'; return; }
-    if (!this.observations.canAdd(planned.transaction) || !future && !canRecord({ kind: 'instruction', transaction: planned.transaction, stepAfter: planned.transaction.after.step }, this.historyBytesLimit, this.eventIndex)) { this.phase = 'PAUSED'; this.reason = 'RESOURCE_LIMIT'; return; }
+    const draft: JournalDraft = { kind: 'instruction', transaction: planned.transaction, stepAfter: planned.transaction.after.step };
+    const draftBytes = future ? 0 : journalBytes(draft, this.eventIndex);
+    if (!this.observations.canAdd(planned.transaction) || draftBytes > this.historyBytesLimit) { this.phase = 'PAUSED'; this.reason = 'RESOURCE_LIMIT'; return; }
     for (const write of planned.transaction.writes) this.memory[write.address] = write.after;
     this.observations.apply(planned.transaction, 1);
     this.head = planned.transaction.after;
@@ -239,7 +245,7 @@ export class MalbolgeMachine {
     this.output.push(...planned.transaction.output);
     this.lastTransaction = planned.transaction;
     if (future) this.eventIndex = future.eventIndex;
-    else this.record({ kind: 'instruction', transaction: planned.transaction, stepAfter: this.head.step });
+    else this.record(draft, draftBytes);
     this.phase = this.head.terminal === 'HALTED' ? 'HALTED' : 'PAUSED';
     this.reason = this.head.terminal === 'HALTED' ? 'HALT_OPCODE' :
       matchesWatchpoint(planned.transaction, this.watchpoints) ? 'WATCHPOINT' :
@@ -374,8 +380,8 @@ export class MalbolgeMachine {
       case 'fault': this.head = { ...this.head, terminal: event.terminalBefore }; break;
     }
   }
-  private record(event: JournalDraft): void {
-    const cursor = appendJournal(this.journal, event, { eventIndex: this.eventIndex, earliestEventIndex: this.earliestEventIndex, historyBytes: this.historyBytes }, this.historyBytesLimit);
+  private record(event: JournalDraft, bytes: number): void {
+    const cursor = appendJournal(this.journal, event, { eventIndex: this.eventIndex, earliestEventIndex: this.earliestEventIndex, historyBytes: this.historyBytes }, this.historyBytesLimit, bytes);
     this.eventIndex = cursor.eventIndex;
     this.earliestEventIndex = cursor.earliestEventIndex;
     this.historyBytes = cursor.historyBytes;
